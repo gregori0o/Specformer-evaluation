@@ -164,7 +164,7 @@ class SpecformerZINC(nn.Module):
         h = self.pool(g, node_feat)
         h = self.linear(h)
 
-        return h, new_e, attn
+        return h#, new_e, attn
 
 
     def length_to_mask(self, length):

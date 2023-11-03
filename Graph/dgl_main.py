@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader, Dataset, TensorDataset
 from torch.optim.lr_scheduler import LambdaLR
 import json5
 from easydict import EasyDict
+import os
 
 from ema_pytorch import EMA
 from zinc_model import SpecformerZINC
@@ -60,6 +61,7 @@ def train_epoch(dataset, model, device, dataloader, loss_fn, optimizer, wandb=No
     for i, data in enumerate(dataloader):
         e, u, g, length, y = data
         e, u, g, length, y = e.to(device), u.to(device), g.to(device), length.to(device), y.to(device)
+        y = y.reshape(-1, 1)
 
         logits = model(e, u, g, length)
         optimizer.zero_grad()
@@ -98,7 +100,7 @@ def eval_epoch(dataset, model, device, dataloader, evaluator, metric):
 
 def main_worker(args):
     seed_everything(args.seed)
-    rank = 'cuda:{}'.format(args.cuda)
+    rank = 'cpu' if args.cuda == -1 else 'cuda:{}'.format(args.cuda)
     print(args)
 
     datainfo = get_dataset(args.dataset)
@@ -152,6 +154,9 @@ def main_worker(args):
                                 args.feat_dropout, args.trans_dropout, args.adj_dropout).to(rank)
 
     print(count_parameters(model))
+    
+    if not os.path.exists('checkpoint'):
+        os.makedirs('checkpoint')
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.999), eps=1e-8, weight_decay=args.weight_decay)
     # warm_up + cosine weight decay
