@@ -61,13 +61,13 @@ def train_epoch(dataset, model, device, dataloader, loss_fn, optimizer, wandb=No
     for i, data in enumerate(dataloader):
         e, u, g, length, y = data
         e, u, g, length, y = e.to(device), u.to(device), g.to(device), length.to(device), y.to(device)
-        y = y.reshape(-1, 1)
+        # y = y.reshape(-1, 1)
 
         logits = model(e, u, g, length)
         optimizer.zero_grad()
 
-        y_idx = y == y
-        loss = loss_fn(logits.to(torch.float32)[y_idx], y.to(torch.float32)[y_idx])
+        # y_idx = y == y # ?
+        loss = loss_fn(logits.to(torch.float32), y.to(torch.long))
 
         loss.backward()
         optimizer.step()
@@ -88,9 +88,13 @@ def eval_epoch(dataset, model, device, dataloader, evaluator, metric):
             e, u, g, length, y = e.to(device), u.to(device), g.to(device), length.to(device), y.to(device)
 
             logits = model(e, u, g, length)
+            if model.nclass > 1:
+                prediction = logits.detach().argmax(dim=1)
+            else:
+                prediction = logits.detach()
 
-            y_true.append(y.view(logits.shape).detach().cpu())
-            y_pred.append(logits.detach().cpu())
+            y_true.append(y.view(prediction.shape).detach().cpu())
+            y_pred.append(prediction.cpu())
         
     y_true = torch.cat(y_true, dim=0).numpy()
     y_pred = torch.cat(y_pred, dim=0).numpy()
@@ -112,6 +116,8 @@ def main_worker(args):
     test  = datainfo['test_dataset']
     metric = datainfo['metric']
     metric_mode = datainfo['metric_mode']
+    num_node_labels = datainfo.get('num_node_labels')
+    num_edge_labels = datainfo.get('num_edge_labels')
 
     # dataloader
     '''
@@ -148,10 +154,27 @@ def main_worker(args):
                                  args.feat_dropout, args.trans_dropout, args.adj_dropout).to(rank)
         model.apply(init_params)
 
-    else:
+    elif args.dataset == 'hiv':
         print('hiv')
         model = SpecformerSmall(nclass, args.nlayer, args.hidden_dim, args.nheads,
                                 args.feat_dropout, args.trans_dropout, args.adj_dropout).to(rank)
+    else:
+        print(f'TUDataset - {args.dataset}')
+        if args.model == "small":
+            model = SpecformerSmall(nclass, args.nlayer, args.hidden_dim, args.nheads,
+                                    args.feat_dropout, args.trans_dropout, args.adj_dropout, 
+                                    num_node_labels, num_edge_labels).to(rank)
+        elif args.model == "medium":
+            model = SpecformerMedium(nclass, args.nlayer, args.hidden_dim, args.nheads,
+                                    args.feat_dropout, args.trans_dropout, args.adj_dropout,
+                                    num_node_labels, num_edge_labels).to(rank)
+        elif args.model == "large":
+            model = SpecformerLarge(nclass, args.nlayer, args.hidden_dim, args.nheads,
+                                    args.feat_dropout, args.trans_dropout, args.adj_dropout,
+                                    num_node_labels, num_edge_labels).to(rank)
+        else:
+            raise NotImplementedError()
+    
 
     print(count_parameters(model))
     
@@ -196,11 +219,27 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--cuda', type=int, default=0)
     parser.add_argument('--dataset', default='zinc')
+    parser.add_argument('--model', default='small')
 
     args = parser.parse_args()
     args.project_name = datetime.datetime.now().strftime('%m-%d-%X')
 
-    config = get_config_from_json(args.dataset)
+    # config = get_config_from_json(args.dataset)
+
+    config = {
+        "nlayer": 4,
+        "nheads": 8,
+        "hidden_dim": 160,
+        "trans_dropout": 0.1,
+        "feat_dropout": 0.05,
+        "adj_dropout": 0.0,
+        "lr": 1e-3,
+        "weight_decay": 5e-4,
+        "epochs": 1,
+        "warm_up_epoch": 50,
+        "batch_size": 32
+    }
+
 
     for key in config.keys():
         setattr(args, key, config[key])

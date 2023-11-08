@@ -1,5 +1,6 @@
 from dataclasses import *
 from dgldataclass import DglGraphPropPredDataset, DglPCQM4Mv2Dataset, DglZincDataset
+from tuddataclass import TUDatasetPrep, DatasetName, load_indexes
 # from pygdataclass import PygGraphPropPredDataset
 import dgl
 from dgl.data.utils import load_graphs, save_graphs, Subset
@@ -10,6 +11,37 @@ from torch_geometric.data import InMemoryDataset, Data
 from ogb.graphproppred import Evaluator
 from torch_geometric.utils import to_dense_adj
 import numpy as np
+from sklearn.model_selection import train_test_split
+
+class TUEvaluator:
+    def __init__(self):
+        '''
+            Evaluator for the TU datasets
+            Metric is Accuracy
+        '''
+        pass 
+
+    def eval(self, input_dict):
+        '''
+            y_true: numpy.ndarray or torch.Tensor of shape (num_graphs,)
+            y_pred: numpy.ndarray or torch.Tensor of shape (num_graphs,)
+            y_true and y_pred need to be of the same type (either numpy.ndarray or torch.Tensor)
+        '''
+        assert('y_pred' in input_dict)
+        assert('y_true' in input_dict)
+
+        y_pred, y_true = input_dict['y_pred'].reshape(-1), input_dict['y_true'].reshape(-1)
+
+        assert((isinstance(y_true, np.ndarray) and isinstance(y_pred, np.ndarray))
+                or
+                (isinstance(y_true, torch.Tensor) and isinstance(y_pred, torch.Tensor)))
+        assert(y_true.shape == y_pred.shape)
+        assert(len(y_true.shape) == 1)
+
+        if isinstance(y_true, torch.Tensor):
+            return {'acc': torch.sum(y_pred == y_true).cpu().item() * 1.0 / len(y_true)}
+        else:
+            return {'acc': float(np.sum(y_pred == y_true)) * 1.0 / len(y_true)}
 
 
 class PCQM4Mv2Evaluator:
@@ -253,6 +285,27 @@ def get_dataset(dataset_name='abaaba'):
             'train_dataset': dataset[split_idx['train']],
             'valid_dataset': dataset[split_idx['valid']],
             'test_dataset':  dataset[split_idx['test']],
+        }
+    elif dataset_name in DatasetName.list():
+        dataset_name = DatasetName.str_to_dataset(dataset_name)
+
+        dataset = TUDatasetPrep(dataset_name)
+        indexes = load_indexes(dataset_name)
+        split_idx = indexes[0]
+        test_idx = split_idx['test']
+        train_idx, val_idx = train_test_split(split_idx["train"], test_size=0.2)
+
+        data_info = {
+            'num_class': dataset.num_class,
+            'loss_fn': F.cross_entropy,
+            'metric': 'acc',
+            'metric_mode': 'max',
+            'evaluator': TUEvaluator(),
+            'train_dataset': dataset[torch.tensor(train_idx, dtype = torch.long)],
+            'valid_dataset': dataset[torch.tensor(val_idx, dtype = torch.long)],
+            'test_dataset': dataset[torch.tensor(test_idx, dtype = torch.long)],
+            'num_node_labels': dataset.num_node_labels,
+            'num_edge_labels': dataset.num_edge_labels,
         }
     elif dataset_name == 'ppa':
         raise NotImplementedError

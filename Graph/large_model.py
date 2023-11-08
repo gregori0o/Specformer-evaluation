@@ -12,44 +12,64 @@ from dgl.ops.edge_softmax import edge_softmax
 from torch.nn.init import xavier_uniform_, xavier_normal_, constant_
 
 
-class AtomEncoder(torch.nn.Module):
+# class AtomEncoder(torch.nn.Module):
 
-    def __init__(self, emb_dim):
-        super(AtomEncoder, self).__init__()
+#     def __init__(self, emb_dim):
+#         super(AtomEncoder, self).__init__()
 
-        self.atom_embedding_list = torch.nn.ModuleList()
+#         self.atom_embedding_list = torch.nn.ModuleList()
 
-        for _, dim in enumerate(get_atom_feature_dims()):
-            emb = torch.nn.Embedding(dim, emb_dim)
-            torch.nn.init.xavier_uniform_(emb.weight.data)
-            self.atom_embedding_list.append(emb)
+#         for _, dim in enumerate(get_atom_feature_dims()):
+#             emb = torch.nn.Embedding(dim, emb_dim)
+#             torch.nn.init.xavier_uniform_(emb.weight.data)
+#             self.atom_embedding_list.append(emb)
 
-    def forward(self, x):
-        x_embedding = 0
-        for i in range(x.shape[1]):
-            x_embedding += self.atom_embedding_list[i](x[:, i])
+#     def forward(self, x):
+#         x_embedding = 0
+#         for i in range(x.shape[1]):
+#             x_embedding += self.atom_embedding_list[i](x[:, i])
 
-        return x_embedding
+#         return x_embedding
 
 
-class BondEncoder(torch.nn.Module):
+# class BondEncoder(torch.nn.Module):
 
-    def __init__(self, emb_dim):
-        super(BondEncoder, self).__init__()
+#     def __init__(self, emb_dim):
+#         super(BondEncoder, self).__init__()
 
-        self.bond_embedding_list = torch.nn.ModuleList()
+#         self.bond_embedding_list = torch.nn.ModuleList()
 
-        for _, dim in enumerate(get_bond_feature_dims()):
+#         for _, dim in enumerate(get_bond_feature_dims()):
+#             emb = torch.nn.Embedding(dim + 1, emb_dim, padding_idx=0)  # for padding
+#             torch.nn.init.xavier_uniform_(emb.weight.data)
+#             self.bond_embedding_list.append(emb)
+
+#     def forward(self, edge_attr):
+#         bond_embedding = 0
+#         for i in range(edge_attr.shape[1]):
+#             bond_embedding += self.bond_embedding_list[i](edge_attr[:, i])
+
+#         return bond_embedding
+    
+
+class FeatEncoder(torch.nn.Module): #todo
+
+    def __init__(self, input_dim, emb_dim):
+        super(FeatEncoder, self).__init__()
+
+        self.feat_embedding_list = torch.nn.ModuleList()
+
+        for dim in input_dim:
             emb = torch.nn.Embedding(dim + 1, emb_dim, padding_idx=0)  # for padding
             torch.nn.init.xavier_uniform_(emb.weight.data)
-            self.bond_embedding_list.append(emb)
+            self.feat_embedding_list.append(emb)
 
-    def forward(self, edge_attr):
-        bond_embedding = 0
-        for i in range(edge_attr.shape[1]):
-            bond_embedding += self.bond_embedding_list[i](edge_attr[:, i])
+    def forward(self, x):
+        feat_embedding = 0
+        for i in range(x.shape[1]):
+            feat_embedding += self.feat_embedding_list[i](x[:, i])
 
-        return bond_embedding
+        return feat_embedding
 
 
 class SineEncoding(nn.Module):
@@ -169,7 +189,7 @@ class Conv(nn.Module):
 
 class SpecformerLarge(nn.Module):
 
-    def __init__(self, nclass, nlayer, hidden_dim=128, nheads=4, feat_dropout=0.1, trans_dropout=0.1, adj_dropout=0.1):
+    def __init__(self, nclass, nlayer, hidden_dim=128, nheads=4, feat_dropout=0.1, trans_dropout=0.1, adj_dropout=0.1, atom_num=None, bond_num=None):
         super(SpecformerLarge, self).__init__()
         
         self.nlayer = nlayer
@@ -177,8 +197,18 @@ class SpecformerLarge(nn.Module):
         self.hidden_dim = hidden_dim
         self.nheads = nheads
 
-        self.atom_encoder = AtomEncoder(hidden_dim)
-        self.bond_encoder = BondEncoder(hidden_dim)
+        if atom_num is None:
+            atom_num = get_atom_feature_dims()
+        else:
+            atom_num = [atom_num]
+        if bond_num is None:
+            bond_num = get_bond_feature_dims()
+        else:
+            bond_num = [bond_num]
+
+        self.atom_encoder = FeatEncoder(atom_num, hidden_dim)
+        self.bond_encoder = FeatEncoder(bond_num, hidden_dim)
+
         self.eig_encoder = SineEncoding(hidden_dim)
 
         self.convs = nn.ModuleList([Conv(hidden_dim, nheads, trans_dropout, feat_dropout, adj_dropout) for _ in range(nlayer)])
