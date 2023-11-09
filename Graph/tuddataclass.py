@@ -2,6 +2,7 @@ import dgl
 from dgl.data import TUDataset
 from dgl.data.utils import load_graphs, save_graphs, Subset
 import os
+import shutil
 import torch
 from torch_geometric.utils import to_dense_adj
 from enum import Enum
@@ -9,7 +10,7 @@ import json
 
 
 class DatasetName(Enum):
-    ZINC = "ZINC_test"
+    # ZINC = "ZINC_test"
     DD = "DD"
     NCI1 = "NCI1"
     PROTEINS = "PROTEINS_full"
@@ -21,9 +22,9 @@ class DatasetName(Enum):
     COLLAB = "COLLAB"
 
     def str_to_dataset(dataset_name: str):
-        if dataset_name == "ZINC":
-            return DatasetName.ZINC
-        elif dataset_name == "DD":
+        # if dataset_name == "ZINC":
+        #     return DatasetName.ZINC
+        if dataset_name == "DD":
             return DatasetName.DD
         elif dataset_name == "NCI1":
             return DatasetName.NCI1
@@ -45,7 +46,7 @@ class DatasetName(Enum):
             raise ValueError(f"Dataset {dataset_name} not found")
     
     def list():
-        return ["ZINC", "DD", "NCI1", "PROTEINS", "ENZYMES", "IMDB-BINARY", "IMDB-MULTI", "REDDIT-BINARY", "REDDIT-MULTI", "COLLAB"]
+        return ["DD", "NCI1", "PROTEINS", "ENZYMES", "IMDB-BINARY", "IMDB-MULTI", "REDDIT-BINARY", "REDDIT-MULTI", "COLLAB"]
 
 
 def load_indexes(dataset_name: DatasetName):
@@ -69,15 +70,15 @@ class TUDatasetPrep(object):
         self.dataset_name = dataset_name.value
         raw_data_dir = os.path.join('data', 'datasets', self.dataset_name, 'raw')
         prep_data_dir = os.path.join('data', 'datasets', self.dataset_name, 'prep')
-        if not os.path.exists(raw_data_dir):
-            os.makedirs(raw_data_dir)
-        dataset = TUDataset(self.dataset_name, raw_dir=raw_data_dir)
-        self.num_class = dataset.num_classes
         
         if os.path.exists(prep_data_dir):
             self.graphs, label_dict = load_graphs(prep_data_dir)
             self.labels = label_dict['labels']
         else:
+            if not os.path.exists(raw_data_dir):
+                os.makedirs(raw_data_dir)
+            dataset = TUDataset(self.dataset_name, raw_dir=raw_data_dir)
+            shutil.rmtree(raw_data_dir)
             self.graphs, self.labels = map(list, zip(*dataset)) # check if this works
             self.labels = torch.tensor(self.labels).long()
             self.graphs = self._preprocess_graphs(self.graphs)
@@ -85,6 +86,7 @@ class TUDatasetPrep(object):
 
         self.num_node_labels = max([graph.ndata['feat'].max().item() for graph in self.graphs]) + 1
         self.num_edge_labels = max([graph.edata['feat'].max().item() for graph in self.graphs]) + 1
+        self.num_class = max([label for label in self.labels]) + 1
 
     def _preprocess_graphs(self, graphs):
         preprocessed_graphs = []

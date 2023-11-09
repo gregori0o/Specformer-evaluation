@@ -38,17 +38,6 @@ def get_config_from_json(json_file):
     config = EasyDict(config_dict)
 
     return config
-
-
-def seed_everything(seed):
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = True
-    torch.backends.cudnn.allow_tf32 = False
     
 
 def count_parameters(model):
@@ -102,12 +91,12 @@ def eval_epoch(dataset, model, device, dataloader, evaluator, metric):
     return evaluator.eval({'y_true': y_true, 'y_pred': y_pred})[metric]
 
 
-def main_worker(args):
-    seed_everything(args.seed)
+def main_worker(args, datainfo=None):
     rank = 'cpu' if args.cuda == -1 else 'cuda:{}'.format(args.cuda)
     print(args)
 
-    datainfo = get_dataset(args.dataset)
+    if datainfo is None:
+        datainfo = get_dataset(args.dataset)
     nclass = datainfo['num_class']
     loss_fn = datainfo['loss_fn']
     evaluator = datainfo['evaluator']
@@ -213,36 +202,38 @@ def main_worker(args):
 
     torch.save(model.state_dict(), 'checkpoint/{}.pth'.format(args.project_name))
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--cuda', type=int, default=0)
-    parser.add_argument('--dataset', default='zinc')
-    parser.add_argument('--model', default='small')
-
-    args = parser.parse_args()
-    args.project_name = datetime.datetime.now().strftime('%m-%d-%X')
-
-    # config = get_config_from_json(args.dataset)
-
-    config = {
-        "nlayer": 4,
-        "nheads": 8,
-        "hidden_dim": 160,
-        "trans_dropout": 0.1,
-        "feat_dropout": 0.05,
-        "adj_dropout": 0.0,
-        "lr": 1e-3,
-        "weight_decay": 5e-4,
-        "epochs": 1,
-        "warm_up_epoch": 50,
-        "batch_size": 32
-    }
+    return best_res
 
 
-    for key in config.keys():
-        setattr(args, key, config[key])
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--seed', type=int, default=0)
+#     parser.add_argument('--cuda', type=int, default=0)
+#     parser.add_argument('--dataset', default='zinc')
+#     parser.add_argument('--model', default='small')
 
-    main_worker(args)
+#     args = parser.parse_args()
+#     args.project_name = datetime.datetime.now().strftime('%m-%d-%X')
+
+#     # config = get_config_from_json(args.dataset)
+
+#     config = {
+#         "nlayer": 4,
+#         "nheads": 8,
+#         "hidden_dim": 160,
+#         "trans_dropout": 0.1,
+#         "feat_dropout": 0.05,
+#         "adj_dropout": 0.0,
+#         "lr": 1e-3,
+#         "weight_decay": 5e-4,
+#         "epochs": 1,
+#         "warm_up_epoch": 50,
+#         "batch_size": 32
+#     }
+
+
+#     for key in config.keys():
+#         setattr(args, key, config[key])
+
+#     main_worker(args)
 
