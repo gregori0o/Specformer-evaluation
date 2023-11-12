@@ -92,7 +92,7 @@ class NeuroDatasetPrep(object):
             g.ndata['e'] = e
             g.ndata['u'] = u
 
-            g.ndata['feat'] = graph['x'].long() # embedding of node features
+            g.ndata['feat'] = graph['x'].float() # embedding of node features
             g.edata['feat'] = torch.zeros((g.num_edges(), 1)).long() # there are no edge lables/encoding
 
             preprocessed_graphs.append(g)
