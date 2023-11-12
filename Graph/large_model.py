@@ -52,7 +52,7 @@ from torch.nn.init import xavier_uniform_, xavier_normal_, constant_
 #         return bond_embedding
     
 
-class FeatEncoder(torch.nn.Module): #todo
+class FeatEncoder(torch.nn.Module):
 
     def __init__(self, input_dim, emb_dim):
         super(FeatEncoder, self).__init__()
@@ -189,7 +189,7 @@ class Conv(nn.Module):
 
 class SpecformerLarge(nn.Module):
 
-    def __init__(self, nclass, nlayer, hidden_dim=128, nheads=4, feat_dropout=0.1, trans_dropout=0.1, adj_dropout=0.1, atom_num=None, bond_num=None):
+    def __init__(self, nclass, nlayer, hidden_dim=128, nheads=4, feat_dropout=0.1, trans_dropout=0.1, adj_dropout=0.1, atom_num=None, bond_num=None, neuro_data=False):
         super(SpecformerLarge, self).__init__()
         
         self.nlayer = nlayer
@@ -197,17 +197,22 @@ class SpecformerLarge(nn.Module):
         self.hidden_dim = hidden_dim
         self.nheads = nheads
 
-        if atom_num is None:
-            atom_num = get_atom_feature_dims()
+        if neuro_data:
+            self.atom_encoder = nn.Linear(1000, hidden_dim)
+            self.bond_encoder = FeatEncoder([1], hidden_dim)
         else:
-            atom_num = [atom_num]
-        if bond_num is None:
-            bond_num = get_bond_feature_dims()
-        else:
-            bond_num = [bond_num]
+            if atom_num is None:
+                atom_num = get_atom_feature_dims()
+            else:
+                atom_num = [atom_num]
+            if bond_num is None:
+                bond_num = get_bond_feature_dims()
+            else:
+                bond_num = [bond_num]
 
-        self.atom_encoder = FeatEncoder(atom_num, hidden_dim)
-        self.bond_encoder = FeatEncoder(bond_num, hidden_dim)
+            self.atom_encoder = FeatEncoder(atom_num, hidden_dim)
+            self.bond_encoder = FeatEncoder(bond_num, hidden_dim)
+
 
         self.eig_encoder = SineEncoding(hidden_dim)
 

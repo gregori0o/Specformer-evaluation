@@ -21,6 +21,8 @@ from large_model import SpecformerLarge
 from medium_model import SpecformerMedium
 from small_model import SpecformerSmall
 from get_dataset import DynamicBatchSampler, RandomSampler, collate_pad, collate_dgl, get_dataset
+from tuddataclass import DatasetName
+from neurodataclass import NeuroDatasetName
 
 
 def init_params(module):
@@ -147,7 +149,23 @@ def main_worker(args, datainfo=None):
         print('hiv')
         model = SpecformerSmall(nclass, args.nlayer, args.hidden_dim, args.nheads,
                                 args.feat_dropout, args.trans_dropout, args.adj_dropout).to(rank)
-    else:
+    elif args.dataset in NeuroDatasetName.list():
+        print(f'NeuroGraph - {args.dataset}')
+        if args.model == "small":
+            model = SpecformerSmall(nclass, args.nlayer, args.hidden_dim, args.nheads,
+                                    args.feat_dropout, args.trans_dropout, args.adj_dropout, 
+                                    neuro_data=True).to(rank)
+        elif args.model == "medium":
+            model = SpecformerMedium(nclass, args.nlayer, args.hidden_dim, args.nheads,
+                                    args.feat_dropout, args.trans_dropout, args.adj_dropout,
+                                    neuro_data=True).to(rank)
+        elif args.model == "large":
+            model = SpecformerLarge(nclass, args.nlayer, args.hidden_dim, args.nheads,
+                                    args.feat_dropout, args.trans_dropout, args.adj_dropout,
+                                    neuro_data=True).to(rank)
+        else:
+            raise NotImplementedError()
+    elif args.dataset in DatasetName.list():
         print(f'TUDataset - {args.dataset}')
         if args.model == "small":
             model = SpecformerSmall(nclass, args.nlayer, args.hidden_dim, args.nheads,
@@ -163,6 +181,8 @@ def main_worker(args, datainfo=None):
                                     num_node_labels, num_edge_labels).to(rank)
         else:
             raise NotImplementedError()
+    else:
+        raise NotImplementedError()
     
 
     print(count_parameters(model))

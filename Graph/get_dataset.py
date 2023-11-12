@@ -1,6 +1,7 @@
 from dataclasses import *
 from dgldataclass import DglGraphPropPredDataset, DglPCQM4Mv2Dataset, DglZincDataset
 from tuddataclass import TUDatasetPrep, DatasetName, load_indexes
+from neurodataclass import NeuroDatasetPrep, NeuroDatasetName, load_neuro_indexes
 # from pygdataclass import PygGraphPropPredDataset
 import dgl
 from dgl.data.utils import load_graphs, save_graphs, Subset
@@ -306,6 +307,26 @@ def get_dataset(dataset_name='abaaba'):
             'test_dataset': dataset[torch.tensor(test_idx, dtype = torch.long)],
             'num_node_labels': dataset.num_node_labels,
             'num_edge_labels': dataset.num_edge_labels,
+        }
+    elif dataset_name in NeuroDatasetName.list():
+        dataset_name = NeuroDatasetName.str_to_dataset(dataset_name)
+
+        dataset = NeuroDatasetName(dataset_name)
+        indexes = load_neuro_indexes(dataset_name)
+        split_idx = indexes[0]
+        test_idx = split_idx['test']
+        train_idx, val_idx = train_test_split(split_idx["train"], test_size=0.2)
+
+        data_info = {
+            'num_class': dataset.num_class,
+            'loss_fn': F.binary_cross_entropy_with_logits,
+            # 'loss_fn': F.cross_entropy,
+            'metric': 'acc',
+            'metric_mode': 'max',
+            'evaluator': TUEvaluator(),
+            'train_dataset': dataset[torch.tensor(train_idx, dtype = torch.long)],
+            'valid_dataset': dataset[torch.tensor(val_idx, dtype = torch.long)],
+            'test_dataset': dataset[torch.tensor(test_idx, dtype = torch.long)],
         }
     elif dataset_name == 'ppa':
         raise NotImplementedError
