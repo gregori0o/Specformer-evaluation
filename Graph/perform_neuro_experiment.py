@@ -202,6 +202,7 @@ def run_model(dataset_name):
         'valid_dataset': dataset[torch.tensor(val_idx, dtype = torch.long)],
         'test_dataset': dataset[torch.tensor(test_idx, dtype = torch.long)],
     }
+    del dataset
 
     acc = main_worker(config, data_info)
 

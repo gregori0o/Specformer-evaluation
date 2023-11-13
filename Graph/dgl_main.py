@@ -126,6 +126,7 @@ def main_worker(args, datainfo=None):
     train_dataloader = DataLoader(train, batch_size = args.batch_size, num_workers=4, collate_fn=collate_dgl, shuffle = True)
     valid_dataloader = DataLoader(valid, batch_size = args.batch_size // 2, num_workers=4, collate_fn=collate_dgl, shuffle = False)
     test_dataloader  = DataLoader(test,  batch_size = args.batch_size // 2, num_workers=4, collate_fn=collate_dgl, shuffle = False)
+    del train, valid, test
 
     if args.dataset == 'zinc':
         print('zinc')
