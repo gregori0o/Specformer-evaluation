@@ -205,6 +205,7 @@ def run_model(dataset_name):
         'num_node_labels': dataset.num_node_labels,
         'num_edge_labels': dataset.num_edge_labels,
     }
+    del dataset
 
     acc = main_worker(config, data_info)
 
@@ -227,10 +228,10 @@ def run_model(dataset_name):
 
 
 if __name__ == '__main__':
-    dataset_name = "PROTEINS"
-    # run_model(dataset_name)
+    dataset_name = "COLLAB"
+    run_model(dataset_name)
     # fair_evaluation(dataset_name)
 
-    for dataset_name in ["PROTEINS", "ENZYMES", "IMDB-BINARY", "COLLAB"]:
-        run_model(dataset_name)
+    # for dataset_name in ["PROTEINS", "ENZYMES", "IMDB-BINARY", "COLLAB"]:
+    #     run_model(dataset_name)
     
