@@ -163,7 +163,7 @@ def fair_evaluation(dataset_name):
 def run_model(dataset_name):
     run_config = {
         "seed": 0,
-        "cuda": 0,
+        "cuda": -1,
         "dataset": dataset_name,
         "project_name": datetime.datetime.now().strftime('%m-%d-%X'),
     }
@@ -177,7 +177,7 @@ def run_model(dataset_name):
         "adj_dropout": 0.0,
         "lr": 1e-3,
         "weight_decay": 5e-4,
-        "epochs": 1000,
+        "epochs": 10,
         "warm_up_epoch": 50,
         "batch_size": 32,
     }
@@ -228,7 +228,7 @@ def run_model(dataset_name):
 
 
 if __name__ == '__main__':
-    dataset_name = "COLLAB"
+    dataset_name = "ENZYMES"
     run_model(dataset_name)
     # fair_evaluation(dataset_name)
 
