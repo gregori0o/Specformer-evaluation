@@ -177,7 +177,7 @@ def run_model(dataset_name):
         "adj_dropout": 0.0,
         "lr": 1e-3,
         "weight_decay": 5e-4,
-        "epochs": 10,
+        "epochs": 1000,
         "warm_up_epoch": 50,
         "batch_size": 32,
     }
