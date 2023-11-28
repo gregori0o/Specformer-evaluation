@@ -1,6 +1,6 @@
-from dataclass import *
+from dataclasses import *
 from dgldataclass import DglGraphPropPredDataset, DglPCQM4Mv2Dataset, DglZincDataset
-from pygdataclass import PygGraphPropPredDataset
+# from pygdataclass import PygGraphPropPredDataset
 import dgl
 from dgl.data.utils import load_graphs, save_graphs, Subset
 import torch
@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader, Sampler, RandomSampler
 from torch_geometric.data import InMemoryDataset, Data
 from ogb.graphproppred import Evaluator
 from torch_geometric.utils import to_dense_adj
+import numpy as np
 
 
 class PCQM4Mv2Evaluator:
@@ -253,19 +254,19 @@ def get_dataset(dataset_name='abaaba'):
             'valid_dataset': dataset[split_idx['valid']],
             'test_dataset':  dataset[split_idx['test']],
         }
-    elif dataset_name == 'ppa':
-        dataset = PygGraphPropPredDataset(name = 'ogbg-ppa')
-        split_idx = dataset.get_idx_split()
-        data_info = {
-            'num_class': 37,
-            'loss_fn':  F.cross_entropy,
-            'metric': 'acc',
-            'metric_mode': 'max',
-            'evaluator': Evaluator('ogbg-ppa'),
-            'train_dataset': dataset[split_idx['train']],
-            'valid_dataset': dataset[split_idx['valid']],
-            'test_dataset':  dataset[split_idx['test']],
-        }
+    # elif dataset_name == 'ppa':
+    #     dataset = PygGraphPropPredDataset(name = 'ogbg-ppa')
+    #     split_idx = dataset.get_idx_split()
+    #     data_info = {
+    #         'num_class': 37,
+    #         'loss_fn':  F.cross_entropy,
+    #         'metric': 'acc',
+    #         'metric_mode': 'max',
+    #         'evaluator': Evaluator('ogbg-ppa'),
+    #         'train_dataset': dataset[split_idx['train']],
+    #         'valid_dataset': dataset[split_idx['valid']],
+    #         'test_dataset':  dataset[split_idx['test']],
+    #     }
     else:
         raise NotImplementedError
 

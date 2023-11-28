@@ -98,7 +98,10 @@ def eval_epoch(dataset, model, device, dataloader, evaluator, metric):
 
 def main_worker(args):
     seed_everything(args.seed)
-    rank = 'cuda:{}'.format(args.cuda)
+    if args.cuda == -1:
+        rank = 'cpu'
+    else:
+        rank = 'cuda:{}'.format(args.cuda)
     print(args)
 
     datainfo = get_dataset(args.dataset)
