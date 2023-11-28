@@ -14,6 +14,7 @@ from torch.optim.lr_scheduler import LambdaLR
 import json5
 from easydict import EasyDict
 import os
+import gc
 
 from ema_pytorch import EMA
 from zinc_model import SpecformerZINC
@@ -124,9 +125,11 @@ def main_worker(args, datainfo=None):
     train_dataloader = DataLoader(train, batch_size = args.batch_size, num_workers=4, collate_fn=collate_dgl, shuffle = True)
     valid_dataloader = DataLoader(valid, batch_size = args.batch_size // 2, num_workers=4, collate_fn=collate_dgl, shuffle = False)
     test_dataloader  = DataLoader(test,  batch_size = args.batch_size // 2, num_workers=4, collate_fn=collate_dgl, shuffle = False)
-    del train
-    del valid
-    del test
+    del train, datainfo['train_dataset']
+    del valid, datainfo['valid_dataset']
+    del test, datainfo['test_dataset']
+    gc.collect()
+
     if args.dataset == 'zinc':
         print('zinc')
         model = SpecformerZINC(nclass, args.nlayer, args.hidden_dim, args.nheads,
@@ -201,6 +204,8 @@ def main_worker(args, datainfo=None):
             print(epoch, 'valid: {:.4f}'.format(val_res), 'test: {:.4f}'.format(test_res), 'best: {:.4f}'.format(best_res))
 
             # wandb.log({'val': val_res, 'test': test_res})
+        
+        gc.collect()
 
     torch.save(model.state_dict(), 'checkpoint/{}.pth'.format(args.project_name))
 

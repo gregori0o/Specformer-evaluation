@@ -11,6 +11,7 @@ import numpy as np
 import random
 import os
 import json
+import gc
 
 
 class Config:
@@ -206,6 +207,7 @@ def run_model(dataset_name):
         'num_edge_labels': dataset.num_edge_labels,
     }
     del dataset
+    gc.collect()
 
     acc = main_worker(config, data_info)
 
