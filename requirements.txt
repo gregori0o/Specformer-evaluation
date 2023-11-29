@@ -13,3 +13,7 @@ tqdm==4.64.1
 wandb==0.13.10
 
 rdkit
+torch_geometric
+torch_sparse
+torch_scatter
+torchmetrics
