@@ -164,7 +164,7 @@ def fair_evaluation(dataset_name):
 def run_model(dataset_name):
     run_config = {
         "seed": 0,
-        "cuda": -1,
+        "cuda": 0,
         "dataset": dataset_name,
         "project_name": datetime.datetime.now().strftime('%m-%d-%X'),
     }
