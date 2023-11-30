@@ -192,8 +192,8 @@ def main_worker(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--cuda', type=int, default=0)
-    parser.add_argument('--dataset', default='zinc')
+    parser.add_argument('--cuda', type=int, default=-1)
+    parser.add_argument('--dataset', default='pcba')
 
     args = parser.parse_args()
     args.project_name = datetime.datetime.now().strftime('%m-%d-%X')
