@@ -68,8 +68,8 @@ def load_indexes(dataset_name: DatasetName):
 class TUDatasetPrep(object):
     def __init__(self, dataset_name: DatasetName):
         self.dataset_name = dataset_name.value
-        raw_data_dir = os.path.join('data', 'datasets', self.dataset_name, 'raw')
-        prep_data_dir = os.path.join('data', 'datasets', self.dataset_name, 'prep')
+        raw_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'raw')
+        prep_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'prep')
         
         if os.path.exists(prep_data_dir):
             self.graphs, label_dict = load_graphs(prep_data_dir)
