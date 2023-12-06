@@ -46,7 +46,7 @@ class DatasetName(Enum):
             raise ValueError(f"Dataset {dataset_name} not found")
     
     def list():
-        return ["DD", "NCI1", "PROTEINS", "ENZYMES", "IMDB-BINARY", "IMDB-MULTI", "REDDIT-BINARY", "REDDIT-MULTI", "COLLAB"]
+        return ["PROTEINS", "ENZYMES", "NCI1", "DD", "IMDB-BINARY", "IMDB-MULTI", "REDDIT-BINARY", "REDDIT-MULTI", "COLLAB"]
 
 
 def load_indexes(dataset_name: DatasetName):
