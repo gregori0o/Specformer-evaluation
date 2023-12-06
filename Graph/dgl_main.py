@@ -57,7 +57,7 @@ def train_epoch(dataset, model, device, dataloader, loss_fn, optimizer, wandb=No
         optimizer.zero_grad()
 
         # y_idx = y == y # ?
-        loss = loss_fn(logits.to(torch.float32), y.to(torch.long))
+        loss = loss_fn(logits.to(torch.float32), F.one_hot(y, model.nclass).to(torch.float32))
 
         loss.backward()
         optimizer.step()
