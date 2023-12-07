@@ -172,18 +172,18 @@ def run_model(dataset_name):
         "log_step": 5
     }
     model_config = {
-        "model": "medium",
+        "model": "small",
         "nlayer": 8,
         "nheads": 8,
-        "hidden_dim": 272,
-        "trans_dropout": 0.3,
+        "hidden_dim": 160,
+        "trans_dropout": 0.1,
         "feat_dropout": 0.1,
-        "adj_dropout": 0.1,
-        "lr": 5e-4,
-        "weight_decay": 5e-3,
+        "adj_dropout": 0.3,
+        "lr": 1e-4,
+        "weight_decay": 1e-4,
         "epochs": 101,
         "warm_up_epoch": 5,
-        "batch_size": 64,
+        "batch_size": 8,
     }
 
     config = Config([run_config, model_config])
@@ -242,11 +242,10 @@ if __name__ == '__main__':
 
     # for dataset_name in ["PROTEINS", "ENZYMES", "IMDB-BINARY", "COLLAB"]:
     #     run_model(dataset_name)
-    datasets_to_omit = ["DD", "REDDIT-BINARY", "REDDIT-MULTI"]
+    datasets_to_omit = []
+    datasets_to_run = ["DD", "REDDIT-BINARY", "REDDIT-MULTI"]
 
-    for dataset_name in DatasetName.list():
-        if dataset_name in datasets_to_omit:
-            continue
+    for dataset_name in datasets_to_run:
         start = time.time()
         run_model(dataset_name)
         end = time.time()
