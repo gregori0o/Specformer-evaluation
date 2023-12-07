@@ -187,7 +187,7 @@ def main_worker(args, datainfo=None):
         train_epoch(args.dataset, model, rank, train_dataloader, loss_fn, optimizer, wandb=None, wandb_item='loss')
         scheduler.step()
 
-        torch.save(model.state_dict(), 'checkpoint/{}_{}.pth'.format(args.project_name, epoch))
+        # torch.save(model.state_dict(), 'checkpoint/{}_{}.pth'.format(args.project_name, epoch))
 
         if epoch % args.log_step == 0:
 
