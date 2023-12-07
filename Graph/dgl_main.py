@@ -89,7 +89,7 @@ def eval_epoch(dataset, model, device, dataloader, evaluator, metric):
     y_true = torch.cat(y_true, dim=0).numpy()
     y_pred = torch.cat(y_pred, dim=0).numpy()
 
-    return evaluator.eval({'y_true': y_true, 'y_pred': y_pred})[metric]
+    return evaluator.eval({'y_true': y_true, 'y_pred': y_pred})
 
 
 def main_worker(args, datainfo=None):
@@ -189,19 +189,27 @@ def main_worker(args, datainfo=None):
 
         torch.save(model.state_dict(), 'checkpoint/{}_{}.pth'.format(args.project_name, epoch))
 
-        if epoch % 1 == 0:
+        if epoch % args.log_step == 0:
 
-            val_res = eval_epoch(args.dataset, model, rank, valid_dataloader, evaluator, metric)
-            test_res = eval_epoch(args.dataset, model, rank, test_dataloader, evaluator, metric)
+            val_eval = eval_epoch(args.dataset, model, rank, valid_dataloader, evaluator, metric)
+            test_eval = eval_epoch(args.dataset, model, rank, test_dataloader, evaluator, metric)
+            val_res = val_eval[metric]
+            test_res = test_eval[metric]
 
-            results.append([val_res, test_res])
+            results.append([val_res, test_res, test_eval["f1"]])
 
             if metric_mode == 'min':
-                best_res = sorted(results, key = lambda x: x[0], reverse=False)[0][1]
+                best = sorted(results, key = lambda x: x[0], reverse=False)[0]
+                best_res = best[1]
+                best_f1 = best[2]
             else:
-                best_res = sorted(results, key = lambda x: x[0], reverse=True)[0][1]
+                best = sorted(results, key = lambda x: x[0], reverse=True)[0]
+                best_res = best[1]
+                best_f1 = best[2]
 
-            print(epoch, 'valid: {:.4f}'.format(val_res), 'test: {:.4f}'.format(test_res), 'best: {:.4f}'.format(best_res))
+            print(epoch, 
+                  'valid: {:.4f}'.format(val_res), 'test: {:.4f}'.format(test_res), 'best: {:.4f}'.format(best_res), 
+                  'valid_f1: {:.4f}'.format(val_eval["f1"]), 'test_f1: {:.4f}'.format(test_eval["f1"]), 'best_f1: {:.4f}'.format(best_f1))
 
             # wandb.log({'val': val_res, 'test': test_res})
         
@@ -209,7 +217,7 @@ def main_worker(args, datainfo=None):
 
     torch.save(model.state_dict(), 'checkpoint/{}.pth'.format(args.project_name))
 
-    return best_res
+    return best_res, best_f1
 
 
 # if __name__ == '__main__':

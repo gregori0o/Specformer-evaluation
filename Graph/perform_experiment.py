@@ -46,6 +46,7 @@ def fair_evaluation(dataset_name):
         "cuda": 0,
         "dataset": dataset_name,
         "project_name": time.strftime('%Y_%b_%d_at_%Hh%Mm%Ss'),
+        "log_step": 5,
         "tuning": False,
         "r_evaluation": 1,
     }
@@ -112,7 +113,7 @@ def fair_evaluation(dataset_name):
                 for key, value in param.items():
                     setattr(config, key, value)
 
-                acc = main_worker(config, data_info)
+                acc, f1 = main_worker(config, data_info)
                 if acc > best_acc:
                     best_acc = acc
                     best_params = param.copy()
@@ -131,7 +132,7 @@ def fair_evaluation(dataset_name):
             data_info['train_dataset'] = dataset[torch.tensor(train_idx, dtype=torch.long)]
             data_info['valid_dataset'] = dataset[torch.tensor(val_idx, dtype=torch.long)]
 
-            acc = main_worker(config, data_info)
+            acc, f1 = main_worker(config, data_info)
             scores_r_list.append(acc)
 
         scores_r = np.mean(scores_r_list)
@@ -168,6 +169,7 @@ def run_model(dataset_name):
         "cuda": 0,
         "dataset": dataset_name,
         "project_name": datetime.datetime.now().strftime('%m-%d-%X'),
+        "log_step": 5
     }
     model_config = {
         "model": "small",
@@ -210,16 +212,18 @@ def run_model(dataset_name):
     del dataset
     gc.collect()
 
-    acc = main_worker(config, data_info)
+    acc, f1 = main_worker(config, data_info)
 
     print(f"Simple evaluation of model on {config.dataset}")
     print(f"ACC: {acc}")
+    print(f"F1: {f1}")
 
     evaluation_result = {}
     evaluation_result["run_config"] = run_config.copy()
     evaluation_result["model_config"] = model_config.copy()
     evaluation_result["evaluation_result"] = {
         "score": acc,
+        "f1": f1,
     }
 
     dir_path = f"results/simple_run/{config.dataset}"
