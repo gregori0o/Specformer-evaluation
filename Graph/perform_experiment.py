@@ -172,15 +172,15 @@ def run_model(dataset_name):
         "log_step": 5
     }
     model_config = {
-        "model": "small",
+        "model": "medium",
         "nlayer": 8,
         "nheads": 8,
-        "hidden_dim": 160,
-        "trans_dropout": 0.1,
+        "hidden_dim": 272,
+        "trans_dropout": 0.3,
         "feat_dropout": 0.1,
-        "adj_dropout": 0.3,
-        "lr": 1e-4,
-        "weight_decay": 1e-4,
+        "adj_dropout": 0.1,
+        "lr": 5e-4,
+        "weight_decay": 5e-3,
         "epochs": 101,
         "warm_up_epoch": 5,
         "batch_size": 64,
@@ -237,6 +237,7 @@ def run_model(dataset_name):
 if __name__ == '__main__':
     # dataset_name = "ENZYMES"
     # run_model(dataset_name)
+    # exit()
     # fair_evaluation(dataset_name)
 
     # for dataset_name in ["PROTEINS", "ENZYMES", "IMDB-BINARY", "COLLAB"]:
