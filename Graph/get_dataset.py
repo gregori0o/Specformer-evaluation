@@ -13,6 +13,8 @@ from ogb.graphproppred import Evaluator
 from torch_geometric.utils import to_dense_adj
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score
+
 
 class TUEvaluator:
     def __init__(self):
@@ -40,9 +42,12 @@ class TUEvaluator:
         assert(len(y_true.shape) == 1)
 
         if isinstance(y_true, torch.Tensor):
-            return {'acc': torch.sum(y_pred == y_true).cpu().item() * 1.0 / len(y_true)}
+            acc = torch.sum(y_pred == y_true).cpu().item() * 1.0 / len(y_true)
+            f1 = f1_score(y_true.cpu().numpy(), y_pred.cpu().numpy(), average='macro') 
         else:
-            return {'acc': float(np.sum(y_pred == y_true)) * 1.0 / len(y_true)}
+            acc = float(np.sum(y_pred == y_true)) * 1.0 / len(y_true)
+            f1 = f1_score(y_true, y_pred, average='macro')
+        return {'acc': acc, "f1": f1}
 
 
 class PCQM4Mv2Evaluator:

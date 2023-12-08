@@ -11,6 +11,8 @@ import numpy as np
 import random
 import os
 import json
+import gc
+import time
 
 
 class Config:
@@ -44,22 +46,23 @@ def fair_evaluation(dataset_name):
         "cuda": 0,
         "dataset": dataset_name,
         "project_name": time.strftime('%Y_%b_%d_at_%Hh%Mm%Ss'),
+        "log_step": 5,
         "tuning": False,
         "r_evaluation": 1,
     }
     model_config = {
         "model": "small",
-        "nlayer": 4,
-        "nheads": 8,
-        "hidden_dim": 160,
+        "nlayer": 8,
+        "nheads": 4,
+        "hidden_dim": 80,
         "trans_dropout": 0.1,
-        "feat_dropout": 0.05,
-        "adj_dropout": 0.0,
-        "lr": 1e-3,
-        "weight_decay": 5e-4,
-        "epochs": 1000,
-        "warm_up_epoch": 50,
-        "batch_size": 32,
+        "feat_dropout": 0.1,
+        "adj_dropout": 0.3,
+        "lr": 1e-4,
+        "weight_decay": 1e-4,
+        "epochs": 100,
+        "warm_up_epoch": 5,
+        "batch_size": 64,
     }
     tuning_config = {
         "nlayer": [4, 8],
@@ -77,7 +80,7 @@ def fair_evaluation(dataset_name):
 
     data_info = {
         'num_class': dataset.num_class,
-        'loss_fn': F.cross_entropy,
+        'loss_fn': F.binary_cross_entropy_with_logits,
         'metric': 'acc',
         'metric_mode': 'max',
         'evaluator': TUEvaluator(),
@@ -110,7 +113,7 @@ def fair_evaluation(dataset_name):
                 for key, value in param.items():
                     setattr(config, key, value)
 
-                acc = main_worker(config, data_info)
+                acc, f1 = main_worker(config, data_info)
                 if acc > best_acc:
                     best_acc = acc
                     best_params = param.copy()
@@ -129,7 +132,7 @@ def fair_evaluation(dataset_name):
             data_info['train_dataset'] = dataset[torch.tensor(train_idx, dtype=torch.long)]
             data_info['valid_dataset'] = dataset[torch.tensor(val_idx, dtype=torch.long)]
 
-            acc = main_worker(config, data_info)
+            acc, f1 = main_worker(config, data_info)
             scores_r_list.append(acc)
 
         scores_r = np.mean(scores_r_list)
@@ -166,20 +169,21 @@ def run_model(dataset_name):
         "cuda": 0,
         "dataset": dataset_name,
         "project_name": datetime.datetime.now().strftime('%m-%d-%X'),
+        "log_step": 5
     }
     model_config = {
-        "model": "small",
-        "nlayer": 4,
-        "nheads": 8,
-        "hidden_dim": 160,
-        "trans_dropout": 0.1,
+        "model": "large",
+        "nlayer": 10,
+        "nheads": 16,
+        "hidden_dim": 400,
+        "trans_dropout": 0.05,
         "feat_dropout": 0.05,
-        "adj_dropout": 0.0,
-        "lr": 1e-3,
-        "weight_decay": 5e-4,
-        "epochs": 1000,
-        "warm_up_epoch": 50,
-        "batch_size": 32,
+        "adj_dropout": 0.05,
+        "lr": 2e-4,
+        "weight_decay": 0.0,
+        "epochs": 151,
+        "warm_up_epoch": 10,
+        "batch_size": 8,
     }
 
     config = Config([run_config, model_config])
@@ -195,7 +199,7 @@ def run_model(dataset_name):
 
     data_info = {
         'num_class': dataset.num_class,
-        'loss_fn': F.cross_entropy,
+        'loss_fn': F.binary_cross_entropy_with_logits,
         'metric': 'acc',
         'metric_mode': 'max',
         'evaluator': TUEvaluator(),
@@ -205,17 +209,21 @@ def run_model(dataset_name):
         'num_node_labels': dataset.num_node_labels,
         'num_edge_labels': dataset.num_edge_labels,
     }
+    del dataset
+    gc.collect()
 
-    acc = main_worker(config, data_info)
+    acc, f1 = main_worker(config, data_info)
 
     print(f"Simple evaluation of model on {config.dataset}")
     print(f"ACC: {acc}")
+    print(f"F1: {f1}")
 
     evaluation_result = {}
     evaluation_result["run_config"] = run_config.copy()
     evaluation_result["model_config"] = model_config.copy()
     evaluation_result["evaluation_result"] = {
         "score": acc,
+        "f1": f1,
     }
 
     dir_path = f"results/simple_run/{config.dataset}"
@@ -227,10 +235,20 @@ def run_model(dataset_name):
 
 
 if __name__ == '__main__':
-    dataset_name = "PROTEINS"
+    # dataset_name = "ENZYMES"
     # run_model(dataset_name)
+    # exit()
     # fair_evaluation(dataset_name)
 
-    for dataset_name in ["PROTEINS", "ENZYMES", "IMDB-BINARY", "COLLAB"]:
+    # for dataset_name in ["PROTEINS", "ENZYMES", "IMDB-BINARY", "COLLAB"]:
+    #     run_model(dataset_name)
+    datasets_to_omit = ["DD", "REDDIT-BINARY", "REDDIT-MULTI"]
+
+    for dataset_name in DatasetName.list():
+        if dataset_name in datasets_to_omit:
+            continue
+        start = time.time()
         run_model(dataset_name)
+        end = time.time()
+        print(f"{dataset_name}: Time elapsed: {end - start}")
     

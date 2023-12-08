@@ -14,6 +14,7 @@ from torch.optim.lr_scheduler import LambdaLR
 import json5
 from easydict import EasyDict
 import os
+import gc
 
 from ema_pytorch import EMA
 from zinc_model import SpecformerZINC
@@ -58,7 +59,7 @@ def train_epoch(dataset, model, device, dataloader, loss_fn, optimizer, wandb=No
         optimizer.zero_grad()
 
         # y_idx = y == y # ?
-        loss = loss_fn(logits.to(torch.float32), y.to(torch.long))
+        loss = loss_fn(logits.to(torch.float32), F.one_hot(y, model.nclass).to(torch.float32))
 
         loss.backward()
         optimizer.step()
@@ -90,7 +91,7 @@ def eval_epoch(dataset, model, device, dataloader, evaluator, metric):
     y_true = torch.cat(y_true, dim=0).numpy()
     y_pred = torch.cat(y_pred, dim=0).numpy()
 
-    return evaluator.eval({'y_true': y_true, 'y_pred': y_pred})[metric]
+    return evaluator.eval({'y_true': y_true, 'y_pred': y_pred})
 
 
 def main_worker(args, datainfo=None):
@@ -126,7 +127,10 @@ def main_worker(args, datainfo=None):
     train_dataloader = DataLoader(train, batch_size = args.batch_size, num_workers=4, collate_fn=collate_dgl, shuffle = True)
     valid_dataloader = DataLoader(valid, batch_size = args.batch_size // 2, num_workers=4, collate_fn=collate_dgl, shuffle = False)
     test_dataloader  = DataLoader(test,  batch_size = args.batch_size // 2, num_workers=4, collate_fn=collate_dgl, shuffle = False)
-    del train, valid, test
+    del train, datainfo['train_dataset']
+    del valid, datainfo['valid_dataset']
+    del test, datainfo['test_dataset']
+    gc.collect()
 
     if args.dataset == 'zinc':
         print('zinc')
@@ -203,27 +207,37 @@ def main_worker(args, datainfo=None):
         train_epoch(args.dataset, model, rank, train_dataloader, loss_fn, optimizer, wandb=None, wandb_item='loss')
         scheduler.step()
 
-        torch.save(model.state_dict(), 'checkpoint/{}_{}.pth'.format(args.project_name, epoch))
+        # torch.save(model.state_dict(), 'checkpoint/{}_{}.pth'.format(args.project_name, epoch))
 
-        if epoch % 1 == 0:
+        if epoch % args.log_step == 0:
 
-            val_res = eval_epoch(args.dataset, model, rank, valid_dataloader, evaluator, metric)
-            test_res = eval_epoch(args.dataset, model, rank, test_dataloader, evaluator, metric)
+            val_eval = eval_epoch(args.dataset, model, rank, valid_dataloader, evaluator, metric)
+            test_eval = eval_epoch(args.dataset, model, rank, test_dataloader, evaluator, metric)
+            val_res = val_eval[metric]
+            test_res = test_eval[metric]
 
-            results.append([val_res, test_res])
+            results.append([val_res, test_res, test_eval["f1"]])
 
             if metric_mode == 'min':
-                best_res = sorted(results, key = lambda x: x[0], reverse=False)[0][1]
+                best = sorted(results, key = lambda x: x[0], reverse=False)[0]
+                best_res = best[1]
+                best_f1 = best[2]
             else:
-                best_res = sorted(results, key = lambda x: x[0], reverse=True)[0][1]
+                best = sorted(results, key = lambda x: x[0], reverse=True)[0]
+                best_res = best[1]
+                best_f1 = best[2]
 
-            print(epoch, 'valid: {:.4f}'.format(val_res), 'test: {:.4f}'.format(test_res), 'best: {:.4f}'.format(best_res))
+            print(epoch, 
+                  'valid: {:.4f}'.format(val_res), 'test: {:.4f}'.format(test_res), 'best: {:.4f}'.format(best_res), 
+                  'valid_f1: {:.4f}'.format(val_eval["f1"]), 'test_f1: {:.4f}'.format(test_eval["f1"]), 'best_f1: {:.4f}'.format(best_f1))
 
             # wandb.log({'val': val_res, 'test': test_res})
+        
+        gc.collect()
 
     torch.save(model.state_dict(), 'checkpoint/{}.pth'.format(args.project_name))
 
-    return best_res
+    return best_res, best_f1
 
 
 # if __name__ == '__main__':
