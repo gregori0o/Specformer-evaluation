@@ -4,7 +4,6 @@ from dgl.data.utils import load_graphs, save_graphs, Subset
 import os
 import shutil
 import torch
-from torch_geometric.utils import to_dense_adj, to_dgl
 from enum import Enum
 import json
 
