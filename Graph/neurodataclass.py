@@ -76,17 +76,17 @@ class NeuroDatasetPrep(object):
                 A_ = D @ A @ D
             e, u = torch.linalg.eigh(A_)
 
-            # fully_connected = torch.ones((num_nodes, num_nodes), dtype=torch.float).nonzero(as_tuple=True)
-            # g = dgl.graph(fully_connected, num_nodes=num_nodes)
+            fully_connected = torch.ones((num_nodes, num_nodes), dtype=torch.float).nonzero(as_tuple=True)
+            g = dgl.graph(fully_connected, num_nodes=num_nodes)
 
             ### Note: This should be fully_connected matrix but requires more memory
 
-            adj = torch.zeros((num_nodes, num_nodes), dtype=torch.float)
-            adj[src, dst] = 1.0
-            for i in range(num_nodes):
-                adj[i, i] = 1.0
-            adj = adj.nonzero(as_tuple=True)
-            g = dgl.graph(adj, num_nodes=num_nodes)
+            # adj = torch.zeros((num_nodes, num_nodes), dtype=torch.float)
+            # adj[src, dst] = 1.0
+            # for i in range(num_nodes):
+            #     adj[i, i] = 1.0
+            # adj = adj.nonzero(as_tuple=True)
+            # g = dgl.graph(adj, num_nodes=num_nodes)
 
             g.ndata['e'] = e
             g.ndata['u'] = u
