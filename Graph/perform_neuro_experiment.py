@@ -168,15 +168,15 @@ def run_model(dataset_name):
     }
     model_config = {
         "model": "small",
-        "nlayer": 4,
+        "nlayer": 8,
         "nheads": 8,
         "hidden_dim": 160,
         "trans_dropout": 0.1,
-        "feat_dropout": 0.05,
-        "adj_dropout": 0.0,
-        "lr": 1e-3,
-        "weight_decay": 5e-4,
-        "epochs": 1000,
+        "feat_dropout": 0.1,
+        "adj_dropout": 0.3,
+        "lr": 1e-4,
+        "weight_decay": 1e-4,
+        "epochs": 100,
         "warm_up_epoch": 50,
         "batch_size": 32,
     }
