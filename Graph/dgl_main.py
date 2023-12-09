@@ -134,42 +134,46 @@ def main_worker(args, datainfo=None):
     if args.dataset == 'zinc':
         print('zinc')
         model = SpecformerZINC(nclass, args.nlayer, args.hidden_dim, args.nheads,
-                               args.feat_dropout, args.trans_dropout, args.adj_dropout).to(rank)
+                               args.feat_dropout, args.trans_dropout, args.adj_dropout)
 
     elif args.dataset == 'pcqm' or args.dataset == 'pcqms':
         print('pcqm')
         model = SpecformerLarge(nclass, args.nlayer, args.hidden_dim, args.nheads,
-                                 args.feat_dropout, args.trans_dropout, args.adj_dropout).to(rank)
+                                 args.feat_dropout, args.trans_dropout, args.adj_dropout)
         print('init')
         model.apply(init_params)
 
     elif args.dataset == 'pcba':
         print('pcba')
         model = SpecformerMedium(nclass, args.nlayer, args.hidden_dim, args.nheads,
-                                 args.feat_dropout, args.trans_dropout, args.adj_dropout).to(rank)
+                                 args.feat_dropout, args.trans_dropout, args.adj_dropout)
         model.apply(init_params)
 
     elif args.dataset == 'hiv':
         print('hiv')
         model = SpecformerSmall(nclass, args.nlayer, args.hidden_dim, args.nheads,
-                                args.feat_dropout, args.trans_dropout, args.adj_dropout).to(rank)
+                                args.feat_dropout, args.trans_dropout, args.adj_dropout)
     else:
         print(f'TUDataset - {args.dataset}')
         if args.model == "small":
             model = SpecformerSmall(nclass, args.nlayer, args.hidden_dim, args.nheads,
                                     args.feat_dropout, args.trans_dropout, args.adj_dropout, 
-                                    num_node_labels, num_edge_labels).to(rank)
+                                    num_node_labels, num_edge_labels)
         elif args.model == "medium":
             model = SpecformerMedium(nclass, args.nlayer, args.hidden_dim, args.nheads,
                                     args.feat_dropout, args.trans_dropout, args.adj_dropout,
-                                    num_node_labels, num_edge_labels).to(rank)
+                                    num_node_labels, num_edge_labels)
         elif args.model == "large":
             model = SpecformerLarge(nclass, args.nlayer, args.hidden_dim, args.nheads,
                                     args.feat_dropout, args.trans_dropout, args.adj_dropout,
-                                    num_node_labels, num_edge_labels).to(rank)
+                                    num_node_labels, num_edge_labels)
         else:
             raise NotImplementedError()
-    
+        
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        model = nn.DataParallel(model)
+    model = model.to(rank)
 
     print(count_parameters(model))
     
