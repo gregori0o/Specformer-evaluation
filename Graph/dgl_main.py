@@ -128,6 +128,7 @@ def main_worker(args, datainfo=None):
     del train, datainfo['train_dataset']
     del valid, datainfo['valid_dataset']
     del test, datainfo['test_dataset']
+    torch.cuda.empty_cache()
     gc.collect()
 
     if args.dataset == 'zinc':
@@ -213,6 +214,7 @@ def main_worker(args, datainfo=None):
 
             # wandb.log({'val': val_res, 'test': test_res})
         
+        torch.cuda.empty_cache()
         gc.collect()
 
     torch.save(model.state_dict(), 'checkpoint/{}.pth'.format(args.project_name))

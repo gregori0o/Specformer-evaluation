@@ -243,6 +243,7 @@ def run_model(dataset_name, model_name="small", batch_size=64):
         'num_edge_labels': dataset.num_edge_labels,
     }
     del dataset
+    torch.cuda.empty_cache()
     gc.collect()
 
     acc, f1 = main_worker(config, data_info)
