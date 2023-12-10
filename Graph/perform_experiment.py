@@ -163,7 +163,7 @@ def fair_evaluation(dataset_name):
         json.dump(evaluation_result, f)
 
 
-def run_model(dataset_name):
+def run_model(dataset_name, model_name="small", batch_size=64):
     run_config = {
         "seed": 0,
         "cuda": 0,
@@ -171,20 +171,53 @@ def run_model(dataset_name):
         "project_name": datetime.datetime.now().strftime('%m-%d-%X'),
         "log_step": 5
     }
-    model_config = {
-        "model": "large",
-        "nlayer": 10,
-        "nheads": 16,
-        "hidden_dim": 400,
-        "trans_dropout": 0.05,
-        "feat_dropout": 0.05,
-        "adj_dropout": 0.05,
-        "lr": 2e-4,
-        "weight_decay": 0.0,
-        "epochs": 151,
-        "warm_up_epoch": 10,
-        "batch_size": 8,
-    }
+    if model_name == "small":
+        model_config = {
+            "model": "small",
+            "nlayer": 8,
+            "nheads": 4,
+            "hidden_dim": 80,
+            "trans_dropout": 0.1,
+            "feat_dropout": 0.1,
+            "adj_dropout": 0.3,
+            "lr": 1e-4,
+            "weight_decay": 1e-4,
+            "epochs": 51,
+            "warm_up_epoch": 5,
+            "batch_size": batch_size,
+        }
+    elif model_name == "medium":
+        model_config = {
+            "model": "medium",
+            "nlayer": 8,
+            "nheads": 8,
+            "hidden_dim": 272,
+            "trans_dropout": 0.3,
+            "feat_dropout": 0.1,
+            "adj_dropout": 0.1,
+            "lr": 5e-4,
+            "weight_decay": 5e-3,
+            "epochs": 101,
+            "warm_up_epoch": 5,
+            "batch_size": batch_size,
+        }
+    elif model_name == "large":
+        model_config = {
+            "model": "large",
+            "nlayer": 10,
+            "nheads": 16,
+            "hidden_dim": 400,
+            "trans_dropout": 0.05,
+            "feat_dropout": 0.05,
+            "adj_dropout": 0.05,
+            "lr": 2e-4,
+            "weight_decay": 0.0,
+            "epochs": 151,
+            "warm_up_epoch": 10,
+            "batch_size": batch_size,
+        }
+    else:
+        raise NotImplementedError("Model name not found!")
 
     config = Config([run_config, model_config])
 
@@ -210,6 +243,7 @@ def run_model(dataset_name):
         'num_edge_labels': dataset.num_edge_labels,
     }
     del dataset
+    torch.cuda.empty_cache()
     gc.collect()
 
     acc, f1 = main_worker(config, data_info)
@@ -242,13 +276,21 @@ if __name__ == '__main__':
 
     # for dataset_name in ["PROTEINS", "ENZYMES", "IMDB-BINARY", "COLLAB"]:
     #     run_model(dataset_name)
-    datasets_to_omit = ["DD", "REDDIT-BINARY", "REDDIT-MULTI"]
+    model_name = "large"
+    batch_size = 32
+    datasets_to_omit = ["COLLAB", "DD", "REDDIT-BINARY", "REDDIT-MULTI"]
 
     for dataset_name in DatasetName.list():
         if dataset_name in datasets_to_omit:
             continue
         start = time.time()
-        run_model(dataset_name)
+        run_model(dataset_name, model_name, batch_size)
         end = time.time()
         print(f"{dataset_name}: Time elapsed: {end - start}")
     
+    batch_size = 32
+    for dataset_name in datasets_to_omit:
+        start = time.time()
+        run_model(dataset_name, model_name, batch_size)
+        end = time.time()
+        print(f"{dataset_name}: Time elapsed: {end - start}")
