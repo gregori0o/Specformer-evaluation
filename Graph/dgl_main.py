@@ -125,11 +125,15 @@ def main_worker(args, datainfo=None):
     train_dataloader = DataLoader(train, batch_size = args.batch_size, num_workers=4, collate_fn=collate_dgl, shuffle = True)
     valid_dataloader = DataLoader(valid, batch_size = args.batch_size // 2, num_workers=4, collate_fn=collate_dgl, shuffle = False)
     test_dataloader  = DataLoader(test,  batch_size = args.batch_size // 2, num_workers=4, collate_fn=collate_dgl, shuffle = False)
+    
+    print("Data loader ready", torch.cuda.memory_allocated())
     del train, datainfo['train_dataset']
     del valid, datainfo['valid_dataset']
     del test, datainfo['test_dataset']
     torch.cuda.empty_cache()
     gc.collect()
+
+    print("Data loader clean", torch.cuda.memory_allocated())
 
     if args.dataset == 'zinc':
         print('zinc')
@@ -175,6 +179,8 @@ def main_worker(args, datainfo=None):
         model = nn.DataParallel(model)
     model = model.to(rank)
 
+    print("Model ready", torch.cuda.memory_allocated())
+
     print(count_parameters(model))
     
     if not os.path.exists('checkpoint'):
@@ -188,6 +194,8 @@ def main_worker(args, datainfo=None):
 
     results = []
     for epoch in range(args.epochs):
+
+        print("Epoch", epoch, torch.cuda.memory_allocated())
 
         train_epoch(args.dataset, model, rank, train_dataloader, loss_fn, optimizer, wandb=None, wandb_item='loss')
         scheduler.step()

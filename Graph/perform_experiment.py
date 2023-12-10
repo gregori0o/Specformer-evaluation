@@ -229,6 +229,7 @@ def run_model(dataset_name, model_name="small", batch_size=64):
     test_idx = indexes['test']
     train_idx, val_idx = train_test_split(indexes["train"], test_size=0.2)
     
+    print("Datase loaded", torch.cuda.memory_allocated())
 
     data_info = {
         'num_class': dataset.num_class,
@@ -245,6 +246,8 @@ def run_model(dataset_name, model_name="small", batch_size=64):
     del dataset
     torch.cuda.empty_cache()
     gc.collect()
+
+    print("Before start main worker", torch.cuda.memory_allocated())
 
     acc, f1 = main_worker(config, data_info)
 
@@ -283,10 +286,12 @@ if __name__ == '__main__':
     for dataset_name in DatasetName.list():
         if dataset_name in datasets_to_omit:
             continue
+        print("Start running experiment ", torch.cuda.memory_allocated())
         start = time.time()
         run_model(dataset_name, model_name, batch_size)
         end = time.time()
         print(f"{dataset_name}: Time elapsed: {end - start}")
+        print("Finish running experiment ", torch.cuda.memory_allocated())
     
     batch_size = 32
     for dataset_name in datasets_to_omit:
