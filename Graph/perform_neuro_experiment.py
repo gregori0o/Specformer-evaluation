@@ -169,17 +169,17 @@ def run_model(dataset_name):
         "log_step": 5
     }
     model_config = {
-        "model": "small",
+        "model": "medium",
         "nlayer": 8,
-        "nheads": 4,
-        "hidden_dim": 80,
-        "trans_dropout": 0.1,
+        "nheads": 8,
+        "hidden_dim": 272,
+        "trans_dropout": 0.3,
         "feat_dropout": 0.1,
-        "adj_dropout": 0.3,
-        "lr": 1e-4,
-        "weight_decay": 1e-4,
-        "epochs": 101,
-        "warm_up_epoch": 50,
+        "adj_dropout": 0.1,
+        "lr": 5e-4,
+        "weight_decay": 5e-3,
+        "epochs": 151,
+        "warm_up_epoch": 5,
         "batch_size": 1,
     }
 
@@ -205,17 +205,20 @@ def run_model(dataset_name):
         'test_dataset': dataset[torch.tensor(test_idx, dtype = torch.long)],
     }
     del dataset
+    torch.cuda.empty_cache()
 
-    acc = main_worker(config, data_info)
+    acc, f1 = main_worker(config, data_info)
 
     print(f"Simple evaluation of model on {config.dataset}")
     print(f"ACC: {acc}")
+    print(f"F1: {f1}")
 
     evaluation_result = {}
     evaluation_result["run_config"] = run_config.copy()
     evaluation_result["model_config"] = model_config.copy()
     evaluation_result["evaluation_result"] = {
         "score": acc,
+        "f1": f1,
     }
 
     dir_path = f"results/simple_run/{config.dataset}"
