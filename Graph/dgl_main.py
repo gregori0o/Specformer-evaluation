@@ -124,9 +124,10 @@ def main_worker(args, datainfo=None):
     test_dataloader  = DataLoader(test,  batch_sampler=test_batch_sampler,  collate_fn=collate_pad)
     '''
 
+    half_batch_size = max(args.batch_size // 2, 1)
     train_dataloader = DataLoader(train, batch_size = args.batch_size, num_workers=4, collate_fn=collate_dgl, shuffle = True)
-    valid_dataloader = DataLoader(valid, batch_size = args.batch_size // 2, num_workers=4, collate_fn=collate_dgl, shuffle = False)
-    test_dataloader  = DataLoader(test,  batch_size = args.batch_size // 2, num_workers=4, collate_fn=collate_dgl, shuffle = False)
+    valid_dataloader = DataLoader(valid, batch_size = half_batch_size, num_workers=4, collate_fn=collate_dgl, shuffle = False)
+    test_dataloader  = DataLoader(test,  batch_size = half_batch_size, num_workers=4, collate_fn=collate_dgl, shuffle = False)
     del train, datainfo['train_dataset']
     del valid, datainfo['valid_dataset']
     del test, datainfo['test_dataset']

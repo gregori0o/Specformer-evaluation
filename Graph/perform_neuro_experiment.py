@@ -180,7 +180,7 @@ def run_model(dataset_name):
         "weight_decay": 1e-4,
         "epochs": 101,
         "warm_up_epoch": 50,
-        "batch_size": 4,
+        "batch_size": 1,
     }
 
     config = Config([run_config, model_config])
