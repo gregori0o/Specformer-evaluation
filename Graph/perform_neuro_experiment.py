@@ -44,6 +44,7 @@ def fair_evaluation(dataset_name):
         "cuda": 0,
         "dataset": dataset_name,
         "project_name": time.strftime('%Y_%b_%d_at_%Hh%Mm%Ss'),
+        "log_step": 5,
         "tuning": False,
         "r_evaluation": 1,
     }
@@ -165,6 +166,7 @@ def run_model(dataset_name):
         "cuda": 0,
         "dataset": dataset_name,
         "project_name": datetime.datetime.now().strftime('%m-%d-%X'),
+        "log_step": 5
     }
     model_config = {
         "model": "small",
