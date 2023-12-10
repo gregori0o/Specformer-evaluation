@@ -39,6 +39,7 @@ def load_neuro_indexes(dataset_name: NeuroDatasetName):
 
 class NeuroDatasetPrep(object):
     def __init__(self, dataset_name: NeuroDatasetName):
+        LIMIT = 300
         self.dataset_name = dataset_name.value
         raw_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'raw')
         prep_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'prep')
@@ -49,7 +50,7 @@ class NeuroDatasetPrep(object):
         else:
             if not os.path.exists(raw_data_dir):
                 os.makedirs(raw_data_dir)
-            dataset = NeuroGraphDataset(name=self.dataset_name, root=raw_data_dir)
+            dataset = NeuroGraphDataset(name=self.dataset_name, root=raw_data_dir)[:LIMIT]
             # shutil.rmtree(raw_data_dir)
             self.labels = [graph.y for graph in dataset]
             self.labels = torch.tensor(self.labels).long()
