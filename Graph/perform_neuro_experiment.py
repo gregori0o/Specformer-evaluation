@@ -169,8 +169,8 @@ def run_model(dataset_name):
     model_config = {
         "model": "small",
         "nlayer": 8,
-        "nheads": 8,
-        "hidden_dim": 160,
+        "nheads": 4,
+        "hidden_dim": 80,
         "trans_dropout": 0.1,
         "feat_dropout": 0.1,
         "adj_dropout": 0.3,
@@ -178,7 +178,7 @@ def run_model(dataset_name):
         "weight_decay": 1e-4,
         "epochs": 100,
         "warm_up_epoch": 50,
-        "batch_size": 32,
+        "batch_size": 8,
     }
 
     config = Config([run_config, model_config])
