@@ -222,6 +222,8 @@ def run_model(dataset_name, model_name="small", batch_size=64):
     config = Config([run_config, model_config])
 
     seed_everything(config.seed)
+    if torch.cuda.is_available():
+        torch.set_default_tensor_type(torch.cuda.HalfTensor)
 
     dataset_name = DatasetName.str_to_dataset(dataset_name)
     dataset = TUDatasetPrep(dataset_name)
