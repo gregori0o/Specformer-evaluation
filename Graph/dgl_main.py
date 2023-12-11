@@ -174,6 +174,8 @@ def main_worker(args, datainfo=None):
         else:
             raise NotImplementedError()
         
+    model = model.half()
+        
     if torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")
         model = nn.DataParallel(model)

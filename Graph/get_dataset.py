@@ -178,7 +178,7 @@ def collate_pad(batch):
 
         if length > max_nodes:
             src, dst = data.edge_index
-            A = torch.zeros([length, length], dtype=torch.float)
+            A = torch.zeros([length, length], dtype=torch.float16)
             A[src, dst] = 1.0
             A = A[:max_nodes, :max_nodes]
             deg = torch.sum(A, axis=0).squeeze()

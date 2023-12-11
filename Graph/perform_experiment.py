@@ -222,6 +222,8 @@ def run_model(dataset_name, model_name="small", batch_size=64):
     config = Config([run_config, model_config])
 
     seed_everything(config.seed)
+    if torch.cuda.is_available():
+        torch.set_default_tensor_type(torch.cuda.HalfTensor)
 
     dataset_name = DatasetName.str_to_dataset(dataset_name)
     dataset = TUDatasetPrep(dataset_name)
@@ -272,15 +274,15 @@ def run_model(dataset_name, model_name="small", batch_size=64):
 
 
 if __name__ == '__main__':
-    # dataset_name = "ENZYMES"
-    # run_model(dataset_name)
-    # exit()
+    dataset_name = "ENZYMES"
+    run_model(dataset_name, "small", 16)
+    exit()
     # fair_evaluation(dataset_name)
 
     # for dataset_name in ["PROTEINS", "ENZYMES", "IMDB-BINARY", "COLLAB"]:
     #     run_model(dataset_name)
-    model_name = "large"
-    batch_size = 32
+    model_name = "small"
+    batch_size = 8
     datasets_to_omit = ["COLLAB", "DD", "REDDIT-BINARY", "REDDIT-MULTI"]
 
     for dataset_name in DatasetName.list():

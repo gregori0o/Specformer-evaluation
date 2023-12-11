@@ -106,11 +106,12 @@ class TUDatasetPrep(object):
                 A_ = D @ A @ D
             e, u = torch.linalg.eigh(A_)
 
-            fully_connected = torch.ones((num_nodes, num_nodes), dtype=torch.float).nonzero(as_tuple=True)
+
+            fully_connected = torch.ones((num_nodes, num_nodes), dtype=torch.float16).nonzero(as_tuple=True)
             g = dgl.graph(fully_connected, num_nodes=num_nodes)
 
-            g.ndata['e'] = e
-            g.ndata['u'] = u
+            g.ndata['e'] = e.half()
+            g.ndata['u'] = u.half()
 
             if graph.ndata.get('node_labels') is not None:
                 g.ndata['feat'] = graph.ndata['node_labels'].long()
