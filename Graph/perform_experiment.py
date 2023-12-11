@@ -279,8 +279,8 @@ if __name__ == '__main__':
 
     # for dataset_name in ["PROTEINS", "ENZYMES", "IMDB-BINARY", "COLLAB"]:
     #     run_model(dataset_name)
-    model_name = "large"
-    batch_size = 32
+    model_name = "medium"
+    batch_size = 1
     datasets_to_omit = ["COLLAB", "DD", "REDDIT-BINARY", "REDDIT-MULTI"]
 
     for dataset_name in DatasetName.list():
@@ -293,7 +293,7 @@ if __name__ == '__main__':
         print(f"{dataset_name}: Time elapsed: {end - start}")
         print("Finish running experiment ", torch.cuda.memory_allocated())
     
-    batch_size = 32
+    batch_size = 1
     for dataset_name in datasets_to_omit:
         start = time.time()
         run_model(dataset_name, model_name, batch_size)
