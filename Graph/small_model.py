@@ -199,8 +199,6 @@ class SpecformerSmall(nn.Module):
         # x: [B, N, d]     node features
         # f: [B, N, N, d]  edge features   
 
-        print('small model forward', torch.cuda.memory_allocated())
-
         B, N = e.size()
         ut = u.transpose(1, 2)
 
@@ -222,8 +220,6 @@ class SpecformerSmall(nn.Module):
         ffn_eig = self.ffn(ffn_eig)
         eig = eig + self.ffn_dropout(ffn_eig)
 
-        print('small model forward inside', torch.cuda.memory_allocated())
-
         new_e = self.decoder(eig).transpose(2, 1)      # [B, m, N]
         diag_e = torch.diag_embed(new_e)               # [B, m, N, N]
 
@@ -243,8 +239,6 @@ class SpecformerSmall(nn.Module):
 
         h = self.pool(g, node_feat)
         h = self.linear(h)
-
-        print('small model forward end', torch.cuda.memory_allocated())
 
         return h
 
