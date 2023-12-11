@@ -150,6 +150,9 @@ class SpecformerSmall(nn.Module):
         super(SpecformerSmall, self).__init__()
         
         print('small model')
+        rank0 = "cuda:0"
+        rank1 = "cuda:1"
+        rank0=rank1="cpu"
         self.nlayer = nlayer
         self.nclass = nclass
         self.hidden_dim = hidden_dim
@@ -164,20 +167,20 @@ class SpecformerSmall(nn.Module):
         else:
             bond_num = [bond_num]
 
-        self.atom_encoder = FeatEncoder(atom_num, hidden_dim)
-        self.bond_encoder = FeatEncoder(bond_num, hidden_dim)
+        self.atom_encoder = FeatEncoder(atom_num, hidden_dim).to(rank0)
+        self.bond_encoder = FeatEncoder(bond_num, hidden_dim).to(rank0)
 
-        self.eig_encoder = SineEncoding(hidden_dim)
-        self.decoder = nn.Linear(hidden_dim, nheads)
+        self.eig_encoder = SineEncoding(hidden_dim).to(rank0)
+        self.decoder = nn.Linear(hidden_dim, nheads).to(rank0)
 
-        self.mha_norm = nn.LayerNorm(hidden_dim)
-        self.ffn_norm = nn.LayerNorm(hidden_dim)
-        self.mha_dropout = nn.Dropout(trans_dropout)
-        self.ffn_dropout = nn.Dropout(trans_dropout)
-        self.mha = nn.MultiheadAttention(hidden_dim, nheads, trans_dropout, batch_first=True)
-        self.ffn = FeedForwardNetwork(hidden_dim, hidden_dim, hidden_dim)
+        self.mha_norm = nn.LayerNorm(hidden_dim).to(rank0)
+        self.ffn_norm = nn.LayerNorm(hidden_dim).to(rank0)
+        self.mha_dropout = nn.Dropout(trans_dropout).to(rank0)
+        self.ffn_dropout = nn.Dropout(trans_dropout).to(rank0)
+        self.mha = nn.MultiheadAttention(hidden_dim, nheads, trans_dropout, batch_first=True).to(rank0)
+        self.ffn = FeedForwardNetwork(hidden_dim, hidden_dim, hidden_dim).to(rank0)
 
-        self.adj_dropout = nn.Dropout(adj_dropout)
+        self.adj_dropout = nn.Dropout(adj_dropout).to(rank1)
         self.filter_encoder = nn.Sequential(
             nn.Linear(nheads + 1, hidden_dim),
             nn.BatchNorm1d(hidden_dim),
@@ -185,11 +188,11 @@ class SpecformerSmall(nn.Module):
             nn.Linear(hidden_dim, hidden_dim),
             nn.BatchNorm1d(hidden_dim),
             nn.GELU(),
-        )
+        ).to(rank1)
 
-        self.convs = nn.ModuleList([Conv(hidden_dim, feat_dropout) for _ in range(nlayer)])
-        self.pool = AvgPooling()
-        self.linear = nn.Linear(hidden_dim, nclass)
+        self.convs = nn.ModuleList([Conv(hidden_dim, feat_dropout) for _ in range(nlayer)]).to(rank1)
+        self.pool = AvgPooling().to(rank1)
+        self.linear = nn.Linear(hidden_dim, nclass).to(rank1)
         
 
     def forward(self, e, u, g, length):

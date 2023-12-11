@@ -174,10 +174,10 @@ def main_worker(args, datainfo=None):
         else:
             raise NotImplementedError()
         
-    if torch.cuda.device_count() > 1:
-        print("Let's use", torch.cuda.device_count(), "GPUs!")
-        model = nn.DataParallel(model)
-    model = model.to(rank)
+    # if torch.cuda.device_count() > 1:
+    #     print("Let's use", torch.cuda.device_count(), "GPUs!")
+    #     model = nn.DataParallel(model)
+    # model = model.to(rank)
 
     print("Model ready", torch.cuda.memory_allocated())
 
