@@ -23,6 +23,14 @@ from medium_model import SpecformerMedium
 from small_model import SpecformerSmall
 from get_dataset import DynamicBatchSampler, RandomSampler, collate_pad, collate_dgl, get_dataset
 
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
+
 
 def init_params(module):
     if isinstance(module, nn.Linear):
@@ -65,12 +73,32 @@ def train_epoch(dataset, model, device, dataloader, loss_fn, optimizer, wandb=No
         if wandb:
             wandb.log({wandb_item: loss.item()})
 
+def evaluate(scores, targets):
+    predictions = scores.argmax(dim=1)
+    accuracy = accuracy_score(targets, predictions)
+    precision = precision_score(targets, predictions, average="micro")
+    recall = recall_score(targets, predictions, average="micro")
+    f1 = f1_score(targets, predictions, average="micro")
+    macro_f1 = f1_score(targets, predictions, average="macro")
+    probs = F.softmax(scores, dim=1)
+    if scores.shape[1] == 2:
+        probs = probs[:, 1]
+    roc = roc_auc_score(targets, probs, average="macro", multi_class="ovr")
+    return {
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "macro f1": macro_f1,
+        "roc": roc,
+    }
 
 def eval_epoch(dataset, model, device, dataloader, evaluator, metric):
     model.eval()
 
     y_true = []
     y_pred = []
+    scores = []
 
     with torch.no_grad():
         for i, data in enumerate(dataloader):
@@ -79,17 +107,22 @@ def eval_epoch(dataset, model, device, dataloader, evaluator, metric):
 
             logits = model(e, u, g, length)
             if model.nclass > 1:
-                prediction = logits.detach().argmax(dim=1)
+                score = logits.detach()
+                prediction = score.argmax(dim=1)
             else:
-                prediction = logits.detach()
+                score = prediction = logits.detach()
 
             y_true.append(y.view(prediction.shape).detach().cpu())
             y_pred.append(prediction.cpu())
+            scores.append(score.cpu())
         
     y_true = torch.cat(y_true, dim=0).numpy()
     y_pred = torch.cat(y_pred, dim=0).numpy()
+    scores = torch.cat(scores, dim=0)
+    
+    full_eval = evaluate(scores, y_true)
 
-    return evaluator.eval({'y_true': y_true, 'y_pred': y_pred})
+    return evaluator.eval({'y_true': y_true, 'y_pred': y_pred}), full_eval
 
 
 def main_worker(args, datainfo=None):
@@ -205,25 +238,25 @@ def main_worker(args, datainfo=None):
 
         if epoch % args.log_step == 0:
 
-            val_eval = eval_epoch(args.dataset, model, rank, valid_dataloader, evaluator, metric)
-            test_eval = eval_epoch(args.dataset, model, rank, test_dataloader, evaluator, metric)
+            val_eval, _ = eval_epoch(args.dataset, model, rank, valid_dataloader, evaluator, metric)
+            test_eval, full_eval = eval_epoch(args.dataset, model, rank, test_dataloader, evaluator, metric)
             val_res = val_eval[metric]
             test_res = test_eval[metric]
 
-            results.append([val_res, test_res, test_eval["f1"]])
+            results.append([val_res, test_res, full_eval])
 
             if metric_mode == 'min':
                 best = sorted(results, key = lambda x: x[0], reverse=False)[0]
                 best_res = best[1]
-                best_f1 = best[2]
+                best_eval = best[2]
             else:
                 best = sorted(results, key = lambda x: x[0], reverse=True)[0]
                 best_res = best[1]
-                best_f1 = best[2]
+                best_eval = best[2]
 
             print(epoch, 
                   'valid: {:.4f}'.format(val_res), 'test: {:.4f}'.format(test_res), 'best: {:.4f}'.format(best_res), 
-                  'valid_f1: {:.4f}'.format(val_eval["f1"]), 'test_f1: {:.4f}'.format(test_eval["f1"]), 'best_f1: {:.4f}'.format(best_f1))
+                  'valid_f1: {:.4f}'.format(val_eval["f1"]), 'test_f1: {:.4f}'.format(test_eval["f1"]), 'best_f1: {:.4f}'.format(best_eval["macro f1"]))
 
             # wandb.log({'val': val_res, 'test': test_res})
         
@@ -232,7 +265,7 @@ def main_worker(args, datainfo=None):
 
     torch.save(model.state_dict(), 'checkpoint/{}.pth'.format(args.project_name))
 
-    return best_res, best_f1
+    return best_res, best_eval
 
 
 # if __name__ == '__main__':
