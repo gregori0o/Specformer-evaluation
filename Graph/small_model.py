@@ -157,10 +157,14 @@ class SpecformerSmall(nn.Module):
 
         if atom_num is None:
             atom_num = get_atom_feature_dims()
+        elif isinstance(atom_num, list):
+            pass
         else:
             atom_num = [atom_num]
         if bond_num is None:
             bond_num = get_bond_feature_dims()
+        elif isinstance(bond_num, list):
+            pass
         else:
             bond_num = [bond_num]
 

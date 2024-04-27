@@ -50,15 +50,18 @@ class DatasetName(Enum):
 
 
 def load_indexes(dataset_name: DatasetName):
+    if not isinstance(dataset_name, str):
+        dataset_name = dataset_name.value
     limit = os.environ.get("SIZE_LIMIT")
     if limit is None:
-        path = os.path.join('data', 'data_splits', dataset_name.value + ".json")
+        path = os.path.join('data', 'data_splits', dataset_name + ".json")
     else:
-        path = os.path.join('data', 'data_splits', f"{dataset_name.value}_{limit}.json")
+        path = os.path.join('data', 'data_splits', f"{dataset_name}_{limit}.json")
         limit = int(limit)
     if not os.path.exists(path):
         from generate_splits import generate
 
+        raise ValueError(f"File {path} not found")
         generate(dataset_name, limit)
     with open(path, "r") as f:
         indexes = json.load(f)
@@ -70,6 +73,9 @@ class TUDatasetPrep(object):
         self.dataset_name = dataset_name.value
         raw_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'raw')
         prep_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'prep')
+        
+        # raw_data_dir = os.path.join('.', 'data', 'datasets', self.dataset_name, 'raw')
+        # prep_data_dir = os.path.join('.', 'data', 'datasets', self.dataset_name, 'prep')
         
         if os.path.exists(prep_data_dir):
             self.graphs, label_dict = load_graphs(prep_data_dir)

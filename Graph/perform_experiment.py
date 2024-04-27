@@ -2,6 +2,8 @@ from dgl_main import main_worker
 import datetime
 import time
 from tuddataclass import DatasetName, TUDatasetPrep, load_indexes
+from ogbgdataclass import OGBGDatasetPrep
+from iamdataclass import IAMGDatasetPrep
 from sklearn.model_selection import train_test_split
 import itertools
 import torch
@@ -64,7 +66,7 @@ def fair_evaluation(dataset_name, model_name="small"):
             "weight_decay": 1e-4,
             "epochs": 100,
             "warm_up_epoch": 5,
-            "batch_size": 64,
+            "batch_size": 8, #proteins=32, NCI1,Proteins,Enzymes,IMDB-B-M=64, rest=8
         }
     elif model_name == "medium":
         model_config = {
@@ -109,8 +111,13 @@ def fair_evaluation(dataset_name, model_name="small"):
 
     seed_everything(config.seed)
 
-    dataset_name = DatasetName.str_to_dataset(dataset_name)
-    dataset = TUDatasetPrep(dataset_name)
+    if dataset_name.startswith("ogbg"):
+        dataset = OGBGDatasetPrep(dataset_name)
+    elif dataset_name in ["Web", "Mutagenicity"]:
+        dataset = IAMGDatasetPrep(dataset_name)
+    else:
+        dataset_name = DatasetName.str_to_dataset(dataset_name)
+        dataset = TUDatasetPrep(dataset_name)
     indexes = load_indexes(dataset_name)
 
     data_info = {
@@ -190,6 +197,7 @@ def fair_evaluation(dataset_name, model_name="small"):
         print(f"MEAN SCORE = {scores_r} in FOLD {i}")
         for key in scores_r.keys():
             scores[key].append(scores_r[key])
+        print(f"Results after {i} Fold: \n {scores}")
         evaluation_result["folds"][i]["score"] = scores_r
 
     # evaluate model
@@ -325,7 +333,7 @@ def fair_evaluation(dataset_name, model_name="small"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("run_experiment")
-    parser.add_argument("--dataset", help="Dataset name", type=str, choices=DatasetName.list(), default=DatasetName.ENZYMES.value)
+    parser.add_argument("--dataset", help="Dataset name", type=str, default=DatasetName.ENZYMES.value)
     args = parser.parse_args()
     dataset_name = args.dataset
     print(f"Running experiment on {dataset_name}")
