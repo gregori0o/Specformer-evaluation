@@ -20,3 +20,4 @@ venv/
 checkpoint/
 dataset/
 datasets/
+results/

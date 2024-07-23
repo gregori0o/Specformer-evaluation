@@ -66,7 +66,7 @@ def fair_evaluation(dataset_name, model_name="small"):
             "weight_decay": 1e-4,
             "epochs": 100,
             "warm_up_epoch": 5,
-            "batch_size": 8, #proteins=32, NCI1,Proteins,Enzymes,IMDB-B-M=64, rest=8
+            "batch_size": 8, #molhiv and mutagenicity  and proteins=32, NCI1,Enzymes,IMDB-B-M=64, COLLAB=8, and rest=2 
         }
     elif model_name == "medium":
         model_config = {
@@ -79,9 +79,9 @@ def fair_evaluation(dataset_name, model_name="small"):
             "adj_dropout": 0.1,
             "lr": 5e-4,
             "weight_decay": 5e-3,
-            "epochs": 101,
+            "epochs": 40,
             "warm_up_epoch": 5,
-            "batch_size": 64,
+            "batch_size": 16, # enzymes, nci1 - 32; IMDB, COLLAB, mutagenicity - 8, molhiv = 16, Proteins = 8
         }
     elif model_name == "large":
         model_config = {
@@ -94,12 +94,25 @@ def fair_evaluation(dataset_name, model_name="small"):
             "adj_dropout": 0.05,
             "lr": 2e-4,
             "weight_decay": 0.0,
-            "epochs": 151,
+            "epochs": 100,
             "warm_up_epoch": 10,
-            "batch_size": 64,
+            "batch_size": 8, # enzymes, NCI1, COLLAB, IMDB B = 8; Mutagenicity = 4
         }
     else:
         raise NotImplementedError("Model name not found!")
+
+    start_fold = 0
+
+    if dataset_name.startswith("Mutagen"):
+        model_config["batch_size"] = 2
+        model_config["epochs"] = 80
+        start_fold = 3
+    if dataset_name.startswith("ogbg-mol"):
+        model_config["batch_size"] = 16
+        model_config["epochs"] = 50
+        start_fold = 4
+
+    print(model_config)
 
     tuning_config = {
         "nlayer": [4, 8],
@@ -145,6 +158,8 @@ def fair_evaluation(dataset_name, model_name="small"):
     evaluation_result["folds"] = {}
 
     for i, fold in enumerate(indexes):
+        if i < start_fold:
+            continue
         print(f"FOLD {i}")
         evaluation_result["folds"][i] = {}
         evaluation_result["folds"][i]["tuning_params"] = None
@@ -199,6 +214,10 @@ def fair_evaluation(dataset_name, model_name="small"):
             scores[key].append(scores_r[key])
         print(f"Results after {i} Fold: \n {scores}")
         evaluation_result["folds"][i]["score"] = scores_r
+        
+        dir_path = f"results/fair_evaluation/{config.dataset}"
+        with open(f"{dir_path}/{config.project_name}_after_fold_{i}.json", "w") as f:
+            json.dump(evaluation_result, f)
 
     # evaluate model
     summ = {}
@@ -337,4 +356,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     dataset_name = args.dataset
     print(f"Running experiment on {dataset_name}")
-    fair_evaluation(dataset_name)
+    fair_evaluation(dataset_name, model_name="large")

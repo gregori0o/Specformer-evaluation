@@ -67,6 +67,9 @@ class FeatEncoder(torch.nn.Module): #todo
     def forward(self, x):
         feat_embedding = 0
         for i in range(x.shape[1]):
+            # print("x shape: ", x.shape, x[:, i].shape)
+            # print("embedding: ", self.feat_embedding_list[i])
+            # print("max_values: ", x[:, i].max())
             feat_embedding += self.feat_embedding_list[i](x[:, i])
 
         return feat_embedding
@@ -157,15 +160,11 @@ class SpecformerSmall(nn.Module):
 
         if atom_num is None:
             atom_num = get_atom_feature_dims()
-        elif isinstance(atom_num, list):
-            pass
-        else:
+        elif not isinstance(atom_num, list):
             atom_num = [atom_num]
         if bond_num is None:
             bond_num = get_bond_feature_dims()
-        elif isinstance(bond_num, list):
-            pass
-        else:
+        elif not isinstance(bond_num, list):
             bond_num = [bond_num]
 
         self.atom_encoder = FeatEncoder(atom_num, hidden_dim)

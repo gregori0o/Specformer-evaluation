@@ -44,7 +44,8 @@ class IAMGDatasetPrep(object):
 
         if dataset_name == "Web":
             self.num_node_labels = [37533, 67]
-            self.num_edge_labels = [17, 33, 85]
+            self.num_edge_labels = [max([graph.edata['feat'][:, i].max().item() for graph in self.graphs]) + 1 for i in range(self.graphs[0].edata['feat'].size(1))]
+            # self.num_edge_labels = [17, 33, 85]
         elif dataset_name == "Mutagenicity":
             self.num_node_labels = 14
             self.num_edge_labels = 4
@@ -79,7 +80,7 @@ class IAMGDatasetPrep(object):
             g.ndata['e'] = e
             g.ndata['u'] = u
 
-            g.ndata['feat'] = graph.ndata['feat'].long()
+            g.ndata['feat'] = graph.ndata['feat'].long()#.reshape(-1, 1)
 
             # if graph.ndata.get('node_labels') is not None:
             #     g.ndata['feat'] = graph.ndata['node_labels'].long()
@@ -89,6 +90,7 @@ class IAMGDatasetPrep(object):
             # if graph.edata.get('edge_labels') is not None:
             edge_idx = torch.stack([src, dst], dim=0)
             edge_attr = graph.edata['feat'].long() + 1  # for padding
+            # edge_attr = edge_attr.reshape(-1, 1)
 
             if len(edge_attr.shape) == 1:
                 edge_attr_dense = to_dense_adj(edge_idx, edge_attr=edge_attr.unsqueeze(-1)).squeeze(0).squeeze(-1).view(-1)

@@ -199,11 +199,11 @@ class SpecformerLarge(nn.Module):
 
         if atom_num is None:
             atom_num = get_atom_feature_dims()
-        else:
+        elif not isinstance(atom_num, list):
             atom_num = [atom_num]
         if bond_num is None:
             bond_num = get_bond_feature_dims()
-        else:
+        elif not isinstance(bond_num, list):
             bond_num = [bond_num]
 
         self.atom_encoder = FeatEncoder(atom_num, hidden_dim)
