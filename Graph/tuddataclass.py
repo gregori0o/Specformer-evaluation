@@ -7,6 +7,7 @@ import torch
 from torch_geometric.utils import to_dense_adj
 from enum import Enum
 import json
+from time_measure import time_measure
 
 
 class DatasetName(Enum):
@@ -69,7 +70,7 @@ def load_indexes(dataset_name: DatasetName):
 
 
 class TUDatasetPrep(object):
-    def __init__(self, dataset_name: DatasetName):
+    def __init__(self, dataset_name: DatasetName, model_type: str):
         self.dataset_name = dataset_name.value
         raw_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'raw')
         prep_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'prep')
@@ -87,7 +88,8 @@ class TUDatasetPrep(object):
             shutil.rmtree(raw_data_dir)
             self.graphs, self.labels = map(list, zip(*dataset)) # check if this works
             self.labels = torch.tensor(self.labels).long()
-            self.graphs = self._preprocess_graphs(self.graphs)
+            self.graphs = time_measure(self._preprocess_graphs, f"spec_{model_type}", self.dataset_name, "preparation")(self.graphs)
+            # self.graphs = self._preprocess_graphs(self.graphs)
             save_graphs(prep_data_dir, self.graphs, labels={'labels': self.labels})
 
         self.num_node_labels = max([graph.ndata['feat'].max().item() for graph in self.graphs]) + 1

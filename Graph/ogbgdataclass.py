@@ -10,9 +10,10 @@ import json
 
 from ogb.graphproppred import DglGraphPropPredDataset
 from ogb.utils.features import get_atom_feature_dims, get_bond_feature_dims
+from time_measure import time_measure
 
 class OGBGDatasetPrep(object):
-    def __init__(self, dataset_name):
+    def __init__(self, dataset_name, model_type: str):
         self.dataset_name = dataset_name
         raw_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'raw')
         prep_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'prep')
@@ -31,7 +32,8 @@ class OGBGDatasetPrep(object):
             self.graphs = dataset.graphs
             self.labels = [int(label) for label in dataset.labels]
             self.labels = torch.tensor(self.labels).long()
-            self.graphs = self._preprocess_graphs(self.graphs)
+            self.graphs = time_measure(self._preprocess_graphs, f"spec_{model_type}", self.dataset_name, "preparation")(self.graphs)
+            # self.graphs = self._preprocess_graphs(self.graphs)
             save_graphs(prep_data_dir, self.graphs, labels={'labels': self.labels})
 
         self.num_node_labels = None

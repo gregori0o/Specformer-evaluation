@@ -9,6 +9,7 @@ from enum import Enum
 import json
 
 import torch
+from time_measure import time_measure
 
 
 def iam_to_dgl(graph):
@@ -20,7 +21,7 @@ def iam_to_dgl(graph):
     return g
 
 class IAMGDatasetPrep(object):
-    def __init__(self, dataset_name):
+    def __init__(self, dataset_name, model_type: str):
         self.dataset_name = dataset_name
         raw_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name)
         prep_data_dir = os.path.join('/net/tscratch/people/plgglegeza', 'data', 'datasets', self.dataset_name, 'prep')
@@ -39,7 +40,8 @@ class IAMGDatasetPrep(object):
             self.graphs = [iam_to_dgl(graph) for graph in dataset]
             self.labels = [int(graph.y) for graph in dataset]
             self.labels = torch.tensor(self.labels).long()
-            self.graphs = self._preprocess_graphs(self.graphs)
+            self.graphs = time_measure(self._preprocess_graphs, f"spec_{model_type}", self.dataset_name, "preparation")(self.graphs)
+            # self.graphs = self._preprocess_graphs(self.graphs)
             save_graphs(prep_data_dir, self.graphs, labels={'labels': self.labels})
 
         if dataset_name == "Web":

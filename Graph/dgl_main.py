@@ -275,7 +275,7 @@ def main_worker(args, datainfo=None):
 
     torch.save(model.state_dict(), 'checkpoint/{}.pth'.format(args.project_name))
 
-    return best_res, best_eval
+    return model, rank
 
 
 # if __name__ == '__main__':
