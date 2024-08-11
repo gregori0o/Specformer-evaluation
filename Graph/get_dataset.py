@@ -129,6 +129,7 @@ def collate_dgl(samples):
     length = []
     E = []
     U = []
+    nero = []
 
     max_nodes = max([g.num_nodes() for g in graphs])
 
@@ -148,16 +149,18 @@ def collate_dgl(samples):
         U.append(pad_u)
         graph_list.append(g)
         length.append(num_nodes)
+        nero.append(g.nero)
 
     E = torch.stack(E, 0)
     U = torch.stack(U, 0)
+    nero = torch.stack(nero, 0)
     length = torch.LongTensor(length)
     batched_graph = dgl.batch(graphs, ndata=['feat'], edata=['feat'])
 
     if isinstance(labels[0], torch.Tensor):
-        return E, U, batched_graph, length, torch.stack(labels)
+        return E, U, nero, batched_graph, length, torch.stack(labels)
     else:
-        return E, U, batched_graph, length, labels
+        return E, U, nero, batched_graph, length, labels
 
 
 def collate_pad(batch):

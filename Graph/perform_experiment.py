@@ -18,6 +18,38 @@ import time
 import argparse
 
 
+batch_sizes = {
+    "small": {
+        "NCI1": 64,
+        "PROTEINS_full": 32,
+        "ENZYMES": 64,
+        "IMDB-BINARY": 64,
+        "IMDB-MULTI": 64,
+        "COLLAB": 8,
+        "ogbg-molhiv": 32,
+        "Mutagenicity": 32,
+    },
+    "medium": {
+        "NCI1": 32,
+        "ENZYMES": 32,
+        "IMDB-BINARY": 8,
+        "IMDB-MULTI": 8,
+        "COLLAB": 8,
+        "ogbg-molhiv": 16,
+        "Mutagenicity": 8,
+    },
+    "large": {
+        "NCI1": 8,
+        "ENZYMES": 8,
+        "IMDB-BINARY": 8,
+        "IMDB-MULTI": 8,
+        "COLLAB": 8,
+        "ogbg-molhiv": 16,
+        "Mutagenicity": 2,
+    }
+}
+
+
 class Config:
     def __init__(self, d_list=None):
         if d_list is not None:
@@ -79,7 +111,7 @@ def fair_evaluation(dataset_name, model_name="small"):
             "adj_dropout": 0.1,
             "lr": 5e-4,
             "weight_decay": 5e-3,
-            "epochs": 40,
+            "epochs": 100,
             "warm_up_epoch": 5,
             "batch_size": 16, # enzymes, nci1 - 32; IMDB, COLLAB, mutagenicity - 8, molhiv = 16, Proteins = 8
         }
@@ -100,17 +132,22 @@ def fair_evaluation(dataset_name, model_name="small"):
         }
     else:
         raise NotImplementedError("Model name not found!")
+    
+    bs = batch_sizes[model_name].get(dataset_name)
+    if bs is None:
+        return
+    model_config["batch_size"] = bs
 
     start_fold = 0
 
-    if dataset_name.startswith("Mutagen"):
-        model_config["batch_size"] = 2
-        model_config["epochs"] = 80
-        start_fold = 3
-    if dataset_name.startswith("ogbg-mol"):
-        model_config["batch_size"] = 16
-        model_config["epochs"] = 50
-        start_fold = 4
+    # if dataset_name.startswith("Mutagen"):
+    #     model_config["batch_size"] = 2
+    #     model_config["epochs"] = 80
+    #     start_fold = 3
+    # if dataset_name.startswith("ogbg-mol"):
+    #     model_config["batch_size"] = 16
+    #     model_config["epochs"] = 50
+    #     start_fold = 4
 
     print(model_config)
 
@@ -164,29 +201,14 @@ def fair_evaluation(dataset_name, model_name="small"):
         evaluation_result["folds"][i] = {}
         evaluation_result["folds"][i]["tuning_params"] = None
 
-        ## get best model for train data
-        if config.tuning:
-            best_acc = 0
-            best_params = {}
-            train_idx, val_idx = train_test_split(fold["train"], test_size=0.2)
-            data_info['train_dataset'] = dataset[torch.tensor(train_idx, dtype=torch.long)]
-            data_info['valid_dataset'] = dataset[torch.tensor(val_idx, dtype=torch.long)]
-            data_info['test_dataset'] = dataset[torch.tensor(fold["test"], dtype=torch.long)]
-            params = get_all_params(tuning_config)
-            for param in params:
-                for key, value in param.items():
-                    setattr(config, key, value)
+        #load nero data
+        path_to_nero_transformed_data = f"/net/tscratch/people/plgglegeza/nero/results/transformed/{dataset_name}/output_{i}.npy"
+        nero_data = np.load(path_to_nero_transformed_data)
+        nero_data = torch.tensor(nero_data, dtype=torch.float32)
+        for i, g in enumerate(dataset.graphs):
+            g.nero = nero_data[i]
 
-                acc, _ = main_worker(config, data_info)
-                if acc > best_acc:
-                    best_acc = acc
-                    best_params = param.copy()
-
-            for key, value in best_params.items():
-                setattr(config, key, value)
-            
-            evaluation_result["folds"][i]["tuning_params"] = best_params.copy()
-        
+        data_info["nero_size"] = nero_data.size(1)
 
         # evaluate model R times
         scores_r = {
@@ -356,4 +378,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     dataset_name = args.dataset
     print(f"Running experiment on {dataset_name}")
-    fair_evaluation(dataset_name, model_name="large")
+    fair_evaluation(dataset_name, model_name="small")

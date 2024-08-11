@@ -57,11 +57,11 @@ def train_epoch(dataset, model, device, dataloader, loss_fn, optimizer, wandb=No
     model.train()
 
     for i, data in enumerate(dataloader):
-        e, u, g, length, y = data
-        e, u, g, length, y = e.to(device), u.to(device), g.to(device), length.to(device), y.to(device)
+        e, u, nero, g, length, y = data
+        e, u, nero, g, length, y = e.to(device), u.to(device), nero.to(device), g.to(device), length.to(device), y.to(device)
         # y = y.reshape(-1, 1)
 
-        logits = model(e, u, g, length)
+        logits = model(e, u, nero, g, length)
         optimizer.zero_grad()
 
         # y_idx = y == y # ?
@@ -112,10 +112,10 @@ def eval_epoch(dataset, model, device, dataloader, evaluator, metric):
 
     with torch.no_grad():
         for i, data in enumerate(dataloader):
-            e, u, g, length, y = data
-            e, u, g, length, y = e.to(device), u.to(device), g.to(device), length.to(device), y.to(device)
+            e, u, nero, g, length, y = data
+            e, u, nero, g, length, y = e.to(device), u.to(device), nero.to(device), g.to(device), length.to(device), y.to(device)
 
-            logits = model(e, u, g, length)
+            logits = model(e, u, nero, g, length)
             if model.nclass > 1:
                 score = logits.detach()
                 prediction = score.argmax(dim=1)
@@ -151,6 +151,7 @@ def main_worker(args, datainfo=None):
     metric_mode = datainfo['metric_mode']
     num_node_labels = datainfo.get('num_node_labels')
     num_edge_labels = datainfo.get('num_edge_labels')
+    nero_size = datainfo.get('nero_size')
 
     # dataloader
     '''
@@ -206,15 +207,15 @@ def main_worker(args, datainfo=None):
         if args.model == "small":
             model = SpecformerSmall(nclass, args.nlayer, args.hidden_dim, args.nheads,
                                     args.feat_dropout, args.trans_dropout, args.adj_dropout, 
-                                    num_node_labels, num_edge_labels)
+                                    num_node_labels, num_edge_labels, nero_size)
         elif args.model == "medium":
             model = SpecformerMedium(nclass, args.nlayer, args.hidden_dim, args.nheads,
                                     args.feat_dropout, args.trans_dropout, args.adj_dropout,
-                                    num_node_labels, num_edge_labels)
+                                    num_node_labels, num_edge_labels, nero_size)
         elif args.model == "large":
             model = SpecformerLarge(nclass, args.nlayer, args.hidden_dim, args.nheads,
                                     args.feat_dropout, args.trans_dropout, args.adj_dropout,
-                                    num_node_labels, num_edge_labels)
+                                    num_node_labels, num_edge_labels, nero_size)
         else:
             raise NotImplementedError()
         

@@ -189,7 +189,7 @@ class Conv(nn.Module):
 
 class SpecformerLarge(nn.Module):
 
-    def __init__(self, nclass, nlayer, hidden_dim=128, nheads=4, feat_dropout=0.1, trans_dropout=0.1, adj_dropout=0.1, atom_num=None, bond_num=None):
+    def __init__(self, nclass, nlayer, hidden_dim=128, nheads=4, feat_dropout=0.1, trans_dropout=0.1, adj_dropout=0.1, atom_num=None, bond_num=None, nero_size=None):
         super(SpecformerLarge, self).__init__()
         
         self.nlayer = nlayer
@@ -213,9 +213,10 @@ class SpecformerLarge(nn.Module):
 
         self.convs = nn.ModuleList([Conv(hidden_dim, nheads, trans_dropout, feat_dropout, adj_dropout) for _ in range(nlayer)])
         self.pool = AvgPooling()
-        self.linear = nn.Linear(hidden_dim, nclass)
+        self.nero_linear = nn.Linear(nero_size, hidden_dim)
+        self.linear = nn.Linear(2 * hidden_dim, nclass)
         
-    def forward(self, e, u, g, length):
+    def forward(self, e, u, nero, g, length):
 
         # e: [B, N]        eigenvalues
         # u: [B, N, N]     eigenvectors
@@ -239,6 +240,8 @@ class SpecformerLarge(nn.Module):
             eig, node_feat = conv(eig, u, ut, g, node_feat, edge_feat, e_mask, edge_idx)
 
         h = self.pool(g, node_feat)
+        nero_feat = self.nero_linear(nero)
+        h = torch.cat((h, nero_feat), dim=1)
         h = self.linear(h)
 
         return h
