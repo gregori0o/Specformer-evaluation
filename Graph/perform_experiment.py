@@ -181,7 +181,6 @@ def fair_evaluation(dataset_name, model_name="small"):
         model, device = time_measure(main_worker, f"spec_{model_name}", run_config["dataset"], "training")(config, data_info)
 
         eval_idx = list(range(128))
-        dataset.upload_indexes(eval_idx, eval_idx, eval_idx)
         half_batch_size = max(config.batch_size // 2, 1)
         test = dataset[torch.tensor(eval_idx, dtype=torch.long)]
         eval_loader = DataLoader(test,  batch_size = half_batch_size, num_workers=4, collate_fn=collate_dgl, shuffle = False)

@@ -171,9 +171,9 @@ def main_worker(args, datainfo=None):
     test_dataloader  = DataLoader(test,  batch_size = half_batch_size, num_workers=4, collate_fn=collate_dgl, shuffle = False)
     
     # print("Data loader ready", torch.cuda.memory_allocated())
-    del train, datainfo['train_dataset']
-    del valid, datainfo['valid_dataset']
-    del test, datainfo['test_dataset']
+    # del train, datainfo['train_dataset']
+    # del valid, datainfo['valid_dataset']
+    # del test, datainfo['test_dataset']
     torch.cuda.empty_cache()
     gc.collect()
 

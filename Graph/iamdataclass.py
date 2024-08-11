@@ -29,7 +29,7 @@ class IAMGDatasetPrep(object):
         # raw_data_dir = os.path.join('.', 'data', 'datasets', self.dataset_name)
         # prep_data_dir = os.path.join('.', 'data', 'datasets', self.dataset_name, 'prep')
         
-        if os.path.exists(prep_data_dir):
+        if os.path.exists(prep_data_dir) and False:
             self.graphs, label_dict = load_graphs(prep_data_dir)
             self.labels = label_dict['labels']
         else:
