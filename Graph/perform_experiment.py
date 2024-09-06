@@ -194,6 +194,10 @@ def fair_evaluation(dataset_name, model_name="small"):
     evaluation_result["tuning_config"] = tuning_config.copy() if config.tuning else None
     evaluation_result["folds"] = {}
 
+    dir_path = f"results/fair_evaluation/{config.dataset}"
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
     for i, fold in enumerate(indexes):
         if i < start_fold:
             continue
@@ -202,11 +206,11 @@ def fair_evaluation(dataset_name, model_name="small"):
         evaluation_result["folds"][i]["tuning_params"] = None
 
         #load nero data
-        path_to_nero_transformed_data = f"/net/tscratch/people/plgglegeza/nero/results/transformed/{dataset_name}/output_{i}.npy"
+        path_to_nero_transformed_data = f"/net/tscratch/people/plgglegeza/nero/results/transformed/{run_config['dataset']}/output_{i}.npy"
         nero_data = np.load(path_to_nero_transformed_data)
         nero_data = torch.tensor(nero_data, dtype=torch.float32)
-        for i, g in enumerate(dataset.graphs):
-            g.nero = nero_data[i]
+        for j, g in enumerate(dataset.graphs):
+            g.nero = nero_data[j]
 
         data_info["nero_size"] = nero_data.size(1)
 
@@ -257,9 +261,6 @@ def fair_evaluation(dataset_name, model_name="small"):
     print(f"Summary: {summ}")
 
     dir_path = f"results/fair_evaluation/{config.dataset}"
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-
     with open(f"{dir_path}/{config.project_name}.json", "w") as f:
         json.dump(evaluation_result, f)
 
@@ -378,4 +379,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     dataset_name = args.dataset
     print(f"Running experiment on {dataset_name}")
-    fair_evaluation(dataset_name, model_name="small")
+    fair_evaluation(dataset_name, model_name="large")
